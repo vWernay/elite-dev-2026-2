@@ -1,14 +1,20 @@
 {
-    "name": "casa-de-leiloes",
-    "private": true,
-    "packageManager": "pnpm@12.15.0",
-    "engines": {
-        "node": ">=22"
-    },
-    "scripts": {
-        "dev:api": "pnpm --filter api dev",
-        "dev:web": "pnpm --filter web dev",
-        "build": "pnpm -r build",
-        "test": "pnpm -r test"
-    }
+  "name": "casa-de-leiloes",
+  "private": true,
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.2"
+  }
 }
