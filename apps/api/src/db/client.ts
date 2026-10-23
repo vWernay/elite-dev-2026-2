@@ -4,3 +4,6 @@ import { env } from "../env.js"
 
 export const pool = new pg.Pool({ connectionString: env.DATABASE_URL })
 export const db = drizzle(pool)
+
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+export type DbOrTx = typeof db | Tx

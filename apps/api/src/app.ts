@@ -9,12 +9,15 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod"
 import { authRoutes } from "./auth/routes.js"
+import { bidRoutes } from "./bids/routes.js"
 import { db } from "./db/client.js"
 import { env } from "./env.js"
 import { AppError } from "./errors.js"
 
 export function buildApp() {
-  const app = Fastify({ logger: true }).withTypeProvider<ZodTypeProvider>()
+  const app = Fastify({
+    logger: env.NODE_ENV !== "test",
+  }).withTypeProvider<ZodTypeProvider>()
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
 
@@ -67,6 +70,7 @@ export function buildApp() {
   })
 
   app.register(authRoutes, { prefix: "/api/auth" })
+  app.register(bidRoutes, { prefix: "/api/lots" })
 
   return app
 }
