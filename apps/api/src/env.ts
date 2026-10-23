@@ -5,6 +5,9 @@ const schema = z.object({
   AUDIT_SECRET: z.string().min(32),
   JWT_SECRET: z.string().min(32),
   PORT: z.coerce.number().default(3000),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
 })
 
 export const env = schema.parse(process.env)
