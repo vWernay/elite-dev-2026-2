@@ -4,9 +4,10 @@
   "description": "",
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "db:generate": "drizzle-kit generate --name init",
     "db:migrate": "node --env-file=../../.env --import tsx src/db/migrate.ts"
   },
@@ -29,6 +30,7 @@
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
   }
 }
