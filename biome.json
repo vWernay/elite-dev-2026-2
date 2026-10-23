@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!**/dist", "!**/openapi.json"]
+    "includes": ["**", "!**/dist", "!**/openapi.json", "!**/drizzle"]
   },
   "formatter": {
     "enabled": true,
