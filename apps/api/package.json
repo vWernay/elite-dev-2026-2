@@ -6,7 +6,9 @@
     "dev": "tsx watch --env-file=../../.env src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate --name init",
+    "db:migrate": "node --env-file=../../.env --import tsx src/db/migrate.ts"
   },
   "keywords": [],
   "author": "",
