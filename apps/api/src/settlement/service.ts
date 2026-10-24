@@ -2,6 +2,7 @@ import { and, asc, eq, isNull, lte, sql } from "drizzle-orm"
 import { chain } from "../audit/index.js"
 import { db } from "../db/client.js"
 import { bids, lots, receipts, users } from "../db/schema.js"
+import { lotEvents } from "../events/bus.js"
 
 export type SettleResult =
   | {
@@ -22,7 +23,7 @@ export async function settleLot(
   lotId: string,
   clock: Clock = () => new Date(),
 ): Promise<SettleResult> {
-  return db.transaction(async (tx): Promise<SettleResult> => {
+  const result = await db.transaction(async (tx): Promise<SettleResult> => {
     // SKIP LOCKED: se um lance ou outro worker está com o lote, tenta na próxima
     const [lot] = await tx
       .select()
@@ -92,6 +93,23 @@ export async function settleLot(
       amountCents,
     }
   })
+
+  // Só depois do commit; lote adulterado ou pulado não gera evento
+  if (result.outcome === "sold") {
+    lotEvents.publish(lotId, {
+      type: "settled",
+      data: {
+        receiptId: result.receiptId,
+        winnerPseudonym: chain.pseudonym(lotId, result.winnerId),
+      },
+    })
+  } else if (result.outcome === "unsold") {
+    lotEvents.publish(lotId, {
+      type: "settled",
+      data: { receiptId: null, winnerPseudonym: null },
+    })
+  }
+  return result
 }
 
 // Um lote com problema não trava os outros

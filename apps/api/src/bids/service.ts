@@ -3,6 +3,7 @@ import { chain } from "../audit/index.js"
 import { db } from "../db/client.js"
 import { bids, lots, users } from "../db/schema.js"
 import { AppError } from "../errors.js"
+import { lotEvents } from "../events/bus.js"
 import { committedCents } from "../wallet/balance.js"
 import {
   assertAboveMinimum,
@@ -21,7 +22,7 @@ export async function placeBid(
 ) {
   const { lotId, bidderId, amountCents } = input
 
-  return db.transaction(async (tx) => {
+  const placed = await db.transaction(async (tx) => {
     // Ordem de locks: lote primeiro, depois o licitante.
     const [lot] = await tx
       .select()
@@ -92,4 +93,18 @@ export async function placeBid(
       },
     }
   })
+
+  // Só depois do commit, ninguém recebe um lance que acabou desfeito
+  lotEvents.publish(lotId, {
+    type: "bid",
+    data: {
+      seq: placed.bid.seq,
+      pseudonym: placed.bid.pseudonym,
+      amountCents: placed.bid.amountCents,
+      createdAt: placed.bid.createdAt.toISOString(),
+      minNextBidCents: placed.lot.minNextBidCents,
+      endsAt: placed.lot.endsAt.toISOString(),
+    },
+  })
+  return placed
 }

@@ -17,6 +17,7 @@ import { scryfall } from "../cards/scryfall.js"
 import { db } from "../db/client.js"
 import { bids, lots, receipts } from "../db/schema.js"
 import { AppError } from "../errors.js"
+import { lotEvents } from "../events/bus.js"
 import type { LotSummary } from "./schemas.js"
 import { type LotStatus, lotStatus } from "./status.js"
 
@@ -189,7 +190,8 @@ export async function cancelLot(
   auctioneerId: string,
   now = new Date(),
 ) {
-  return db.transaction(async (tx) => {
+  let cancelledNow = false
+  const summary = await db.transaction(async (tx) => {
     // Mesmo lock do lance: cancelamento e lance nunca se cruzam
     const [lot] = await tx
       .select()
@@ -225,8 +227,12 @@ export async function cancelLot(
       .set({ cancelledAt: now })
       .where(eq(lots.id, lotId))
       .returning()
+    cancelledNow = true
     return toSummary(updated, now)
   })
+
+  if (cancelledNow) lotEvents.publish(lotId, { type: "cancelled", data: {} })
+  return summary
 }
 
 export async function listAuctioneerLots(
