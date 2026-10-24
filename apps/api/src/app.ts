@@ -10,6 +10,7 @@ import {
 } from "fastify-type-provider-zod"
 import { authRoutes } from "./auth/routes.js"
 import { bidRoutes } from "./bids/routes.js"
+import { cardRoutes } from "./cards/routes.js"
 import { db } from "./db/client.js"
 import { env } from "./env.js"
 import { AppError } from "./errors.js"
@@ -72,6 +73,7 @@ export function buildApp() {
 
   app.register(authRoutes, { prefix: "/api/auth" })
   app.register(bidRoutes, { prefix: "/api/lots" })
+  app.register(cardRoutes, { prefix: "/api/cards" })
   app.register(walletRoutes, { prefix: "/api/wallet" })
 
   return app
