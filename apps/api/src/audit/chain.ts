@@ -23,6 +23,12 @@ export type BidData = {
 
 export type ChainBid = BidData & { mac: string }
 
+export type ReceiptData = {
+  winnerId: string
+  amountCents: number
+  chainMac: string
+}
+
 export type AuditIssue =
   | "COUNT_MISMATCH"
   | "HEAD_MISMATCH"
@@ -138,6 +144,22 @@ export function createChain(secret: string) {
     }
   }
 
+  // O comprovante vale se a cadeia está íntegra e ele bate com o último lance.
+  function verifyReceipt(
+    lot: LotState,
+    storedBids: ChainBid[],
+    receipt: ReceiptData,
+  ) {
+    if (verify(lot, storedBids).verdict !== "intact") return false
+    const last = [...storedBids].sort((a, b) => a.seq - b.seq).at(-1)
+    return (
+      last !== undefined &&
+      receipt.winnerId === last.bidderId &&
+      receipt.amountCents === last.amountCents &&
+      sameMac(receipt.chainMac, lot.headMac)
+    )
+  }
+
   return {
     genesis,
     bidMac,
@@ -146,6 +168,7 @@ export function createChain(secret: string) {
     pseudonym,
     fingerprint,
     verify,
+    verifyReceipt,
   }
 }
 

@@ -239,3 +239,54 @@ describe("chain.fingerprint", () => {
     expect(chain.fingerprint(lot.headMac)).toBe(lot.headMac.slice(0, 16))
   })
 })
+
+describe("chain.verifyReceipt", () => {
+  const receiptFor = (lot: LotState, last: ChainBid) => ({
+    winnerId: last.bidderId,
+    amountCents: last.amountCents,
+    chainMac: lot.headMac,
+  })
+
+  it("aceita um comprovante que bate com o último lance", () => {
+    const { lot, bids } = threeBids()
+    expect(chain.verifyReceipt(lot, bids, receiptFor(lot, bids[2]))).toBe(true)
+  })
+
+  it("recusa valor, vencedor ou chain_mac diferentes", () => {
+    const { lot, bids } = threeBids()
+    const receipt = receiptFor(lot, bids[2])
+    expect(chain.verifyReceipt(lot, bids, { ...receipt, amountCents: 1 })).toBe(
+      false,
+    )
+    expect(
+      chain.verifyReceipt(lot, bids, { ...receipt, winnerId: BRUNO }),
+    ).toBe(false)
+    expect(
+      chain.verifyReceipt(lot, bids, { ...receipt, chainMac: "0".repeat(64) }),
+    ).toBe(false)
+  })
+
+  it("recusa quando a cadeia foi adulterada", () => {
+    const { lot, bids } = threeBids()
+    const receipt = receiptFor(lot, bids[2])
+    const tampered = [bids[0], { ...bids[1], amountCents: 1 }, bids[2]]
+    expect(chain.verifyReceipt(lot, tampered, receipt)).toBe(false)
+  })
+
+  it("recusa quando o último lance foi removido", () => {
+    const { lot, bids } = threeBids()
+    expect(
+      chain.verifyReceipt(lot, bids.slice(0, 2), receiptFor(lot, bids[2])),
+    ).toBe(false)
+  })
+
+  it("recusa comprovante de um lote sem lances", () => {
+    const { lot } = buildLot([])
+    const receipt = {
+      winnerId: ANA,
+      amountCents: 10_000,
+      chainMac: lot.headMac,
+    }
+    expect(chain.verifyReceipt(lot, [], receipt)).toBe(false)
+  })
+})

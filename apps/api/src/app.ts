@@ -9,12 +9,14 @@ import {
   type ZodTypeProvider,
 } from "fastify-type-provider-zod"
 import { authRoutes } from "./auth/routes.js"
+import { bidderRoutes } from "./bidder/routes.js"
 import { bidRoutes } from "./bids/routes.js"
 import { cardRoutes } from "./cards/routes.js"
 import { db } from "./db/client.js"
 import { env } from "./env.js"
 import { AppError } from "./errors.js"
 import { auctioneerRoutes, lotRoutes } from "./lots/routes.js"
+import { receiptRoutes } from "./receipts/routes.js"
 import { walletRoutes } from "./wallet/routes.js"
 
 export function buildApp() {
@@ -78,6 +80,8 @@ export function buildApp() {
   app.register(auctioneerRoutes, { prefix: "/api/auctioneer" })
   app.register(cardRoutes, { prefix: "/api/cards" })
   app.register(walletRoutes, { prefix: "/api/wallet" })
+  app.register(bidderRoutes, { prefix: "/api/bidder" })
+  app.register(receiptRoutes, { prefix: "/api/receipts" })
 
   return app
 }

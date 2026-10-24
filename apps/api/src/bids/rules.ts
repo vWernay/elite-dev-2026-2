@@ -27,7 +27,7 @@ export function assertBiddable(lot: Lot, bidderId: string, now: Date) {
       startsAt: lot.startsAt.toISOString(),
     })
   }
-  if (now >= lot.endsAt) {
+  if (now >= lot.endsAt || lot.settledAt) {
     throw new AppError(409, "LOT_ENDED", "Este lote já foi encerrado.")
   }
   if (lot.leaderId === bidderId) {
