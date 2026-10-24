@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { buildApp } from "../app.js"
 import { db } from "../db/client.js"
 import { users } from "../db/schema.js"
+import { signUp as register } from "../test/auth.js"
 import {
   addMs,
   createLot,
@@ -12,26 +13,11 @@ import {
 } from "../test/factories.js"
 
 const app = buildApp()
+const signUp = (role: "bidder" | "auctioneer") => register(app, role)
 
 beforeAll(() => app.ready())
 afterAll(() => app.close())
 beforeEach(resetDb)
-
-async function signUp(role: "bidder" | "auctioneer") {
-  const response = await app.inject({
-    method: "POST",
-    url: "/api/auth/register",
-    payload: {
-      name: "Teste",
-      email: `${role}@teste.com`,
-      password: "senha12345",
-      role,
-    },
-  })
-  const { id } = response.json()
-  const cookie = response.cookies.find((c) => c.name === "token")
-  return { id, cookies: { token: cookie?.value ?? "" } }
-}
 
 // Lote ao vivo no relógio real, já que a rota usa a hora do servidor.
 async function liveLot() {

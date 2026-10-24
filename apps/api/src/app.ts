@@ -13,6 +13,7 @@ import { bidRoutes } from "./bids/routes.js"
 import { db } from "./db/client.js"
 import { env } from "./env.js"
 import { AppError } from "./errors.js"
+import { walletRoutes } from "./wallet/routes.js"
 
 export function buildApp() {
   const app = Fastify({
@@ -71,6 +72,7 @@ export function buildApp() {
 
   app.register(authRoutes, { prefix: "/api/auth" })
   app.register(bidRoutes, { prefix: "/api/lots" })
+  app.register(walletRoutes, { prefix: "/api/wallet" })
 
   return app
 }
