@@ -8,6 +8,7 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from "fastify-type-provider-zod"
+import { auditRoutes } from "./audit/routes.js"
 import { authRoutes } from "./auth/routes.js"
 import { bidderRoutes } from "./bidder/routes.js"
 import { bidRoutes } from "./bids/routes.js"
@@ -77,6 +78,7 @@ export function buildApp() {
   app.register(authRoutes, { prefix: "/api/auth" })
   app.register(lotRoutes, { prefix: "/api/lots" })
   app.register(bidRoutes, { prefix: "/api/lots" })
+  app.register(auditRoutes, { prefix: "/api/lots" })
   app.register(auctioneerRoutes, { prefix: "/api/auctioneer" })
   app.register(cardRoutes, { prefix: "/api/cards" })
   app.register(walletRoutes, { prefix: "/api/wallet" })
