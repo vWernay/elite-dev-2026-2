@@ -21,6 +21,16 @@ export async function authenticate(request: FastifyRequest) {
   }
 }
 
+// Para rotas públicas que mostram algo a mais quando há sessão
+export async function optionalUser(request: FastifyRequest) {
+  try {
+    await request.jwtVerify()
+    return request.user
+  } catch {
+    return null
+  }
+}
+
 export function requireRole(role: UserRole) {
   return async (request: FastifyRequest) => {
     await authenticate(request)
