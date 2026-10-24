@@ -16,13 +16,18 @@ import { cardRoutes } from "./cards/routes.js"
 import { db } from "./db/client.js"
 import { env } from "./env.js"
 import { AppError } from "./errors.js"
+import { DEFAULT_HEARTBEAT_MS, eventRoutes } from "./events/routes.js"
 import { auctioneerRoutes, lotRoutes } from "./lots/routes.js"
 import { receiptRoutes } from "./receipts/routes.js"
 import { walletRoutes } from "./wallet/routes.js"
 
-export function buildApp() {
+type AppOptions = { sseHeartbeatMs?: number }
+
+export function buildApp(options: AppOptions = {}) {
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
+    // sem isto, o desligamento esperaria os streams SSE abertos para sempre
+    forceCloseConnections: true,
   }).withTypeProvider<ZodTypeProvider>()
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
@@ -79,6 +84,10 @@ export function buildApp() {
   app.register(lotRoutes, { prefix: "/api/lots" })
   app.register(bidRoutes, { prefix: "/api/lots" })
   app.register(auditRoutes, { prefix: "/api/lots" })
+  app.register(eventRoutes, {
+    prefix: "/api/lots",
+    heartbeatMs: options.sseHeartbeatMs ?? DEFAULT_HEARTBEAT_MS,
+  })
   app.register(auctioneerRoutes, { prefix: "/api/auctioneer" })
   app.register(cardRoutes, { prefix: "/api/cards" })
   app.register(walletRoutes, { prefix: "/api/wallet" })
