@@ -3,13 +3,14 @@ import type { FastifyInstance } from "fastify"
 export async function signUp(
   app: FastifyInstance,
   role: "bidder" | "auctioneer",
+  email = `${role}@teste.com`,
 ) {
   const response = await app.inject({
     method: "POST",
     url: "/api/auth/register",
     payload: {
       name: "Teste",
-      email: `${role}@teste.com`,
+      email,
       password: "senha12345",
       role,
     },

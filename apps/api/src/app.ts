@@ -14,6 +14,7 @@ import { cardRoutes } from "./cards/routes.js"
 import { db } from "./db/client.js"
 import { env } from "./env.js"
 import { AppError } from "./errors.js"
+import { auctioneerRoutes, lotRoutes } from "./lots/routes.js"
 import { walletRoutes } from "./wallet/routes.js"
 
 export function buildApp() {
@@ -72,7 +73,9 @@ export function buildApp() {
   })
 
   app.register(authRoutes, { prefix: "/api/auth" })
+  app.register(lotRoutes, { prefix: "/api/lots" })
   app.register(bidRoutes, { prefix: "/api/lots" })
+  app.register(auctioneerRoutes, { prefix: "/api/auctioneer" })
   app.register(cardRoutes, { prefix: "/api/cards" })
   app.register(walletRoutes, { prefix: "/api/wallet" })
 
