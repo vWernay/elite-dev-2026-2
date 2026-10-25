@@ -7,6 +7,10 @@ import { defineConfig } from "vite"
 
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
+  server: {
+    port: 5173,
+    proxy: { "/api": "http://localhost:3000" },
+  },
   plugins: [
     devtools(),
     tanstackRouter({ target: "react", autoCodeSplitting: true }),

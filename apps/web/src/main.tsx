@@ -1,9 +1,18 @@
+import "@mantine/core/styles.css"
+import "@mantine/dates/styles.css"
+import "@mantine/notifications/styles.css"
+
+import { MantineProvider } from "@mantine/core"
+import { Notifications } from "@mantine/notifications"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
 import ReactDOM from "react-dom/client"
+import { queryClient } from "./query-client"
 import { routeTree } from "./routeTree.gen"
 
 const router = createRouter({
   routeTree,
+  context: { queryClient },
   defaultPreload: "intent",
   scrollRestoration: true,
 })
@@ -14,9 +23,15 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const rootElement = document.getElementById("app")!
+const rootElement = document.getElementById("app")
 
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-  root.render(<RouterProvider router={router} />)
+if (rootElement && !rootElement.innerHTML) {
+  ReactDOM.createRoot(rootElement).render(
+    <MantineProvider defaultColorScheme="auto">
+      <Notifications position="top-right" />
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </MantineProvider>,
+  )
 }

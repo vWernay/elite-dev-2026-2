@@ -12,6 +12,8 @@
       "!**/dist",
       "!**/drizzle",
       "!**/openapi.json",
+      "!**/routeTree.gen.ts",
+      "!apps/web/src/api/generated",
       "!pnpm-lock.yaml"
     ]
   },
