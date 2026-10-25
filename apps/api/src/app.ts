@@ -1,9 +1,12 @@
 import fastifyCookie from "@fastify/cookie"
 import fastifyJwt from "@fastify/jwt"
+import fastifySwagger from "@fastify/swagger"
+import fastifySwaggerUi from "@fastify/swagger-ui"
 import { sql } from "drizzle-orm"
 import Fastify, { type FastifyError } from "fastify"
 import {
   hasZodFastifySchemaValidationErrors,
+  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
   type ZodTypeProvider,
@@ -37,6 +40,12 @@ export function buildApp(options: AppOptions = {}) {
     secret: env.JWT_SECRET,
     cookie: { cookieName: "token", signed: false },
   })
+
+  app.register(fastifySwagger, {
+    openapi: { info: { title: "Casa de Leilões API", version: "1.0.0" } },
+    transform: jsonSchemaTransform,
+  })
+  app.register(fastifySwaggerUi, { routePrefix: "/api/docs" })
 
   app.setErrorHandler((err: FastifyError, request, reply) => {
     if (err instanceof AppError) {
