@@ -1,13 +1,8 @@
-import { Anchor, AppShell, Container, Group } from "@mantine/core"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import type { QueryClient } from "@tanstack/react-query"
-import {
-  createRootRouteWithContext,
-  Link,
-  Outlet,
-} from "@tanstack/react-router"
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
-import { ColorSchemeToggle } from "../components/ColorSchemeToggle"
+import { AppLayout } from "../components/layout/AppLayout"
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -17,29 +12,8 @@ export const Route = createRootRouteWithContext<{
 
 function RootComponent() {
   return (
-    <AppShell header={{ height: 60 }} padding="md">
-      <AppShell.Header>
-        <Container size="lg" h="100%">
-          <Group h="100%" justify="space-between">
-            <Anchor
-              component={Link}
-              to="/"
-              underline="never"
-              c="inherit"
-              fw={700}
-              fz="xl"
-            >
-              Casa de Leilões
-            </Anchor>
-            <ColorSchemeToggle />
-          </Group>
-        </Container>
-      </AppShell.Header>
-      <AppShell.Main>
-        <Container size="lg">
-          <Outlet />
-        </Container>
-      </AppShell.Main>
+    <AppLayout>
+      <Outlet />
       <TanStackDevtools
         config={{ position: "bottom-right" }}
         plugins={[
@@ -49,6 +23,6 @@ function RootComponent() {
           },
         ]}
       />
-    </AppShell>
+    </AppLayout>
   )
 }
