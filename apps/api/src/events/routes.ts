@@ -17,7 +17,7 @@ export const eventRoutes: FastifyPluginAsyncZod<Options> = async (
 ) => {
   app.get(
     "/:id/events",
-    { schema: { params: z.object({ id: z.uuid() }) } },
+    { schema: { hide: true, params: z.object({ id: z.uuid() }) } },
     async (request, reply) => {
       const lotId = request.params.id
       const [lot] = await db
