@@ -34,6 +34,8 @@ const rarities: Record<string, string> = {
   uncommon: "Incomum",
   rare: "Rara",
   mythic: "Mítica",
+  special: "Especial",
+  bonus: "Bônus",
 }
 
 export const rarityLabel = (rarity: string) => rarities[rarity] ?? rarity

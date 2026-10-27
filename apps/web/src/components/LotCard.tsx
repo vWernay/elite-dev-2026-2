@@ -27,7 +27,8 @@ type Props = {
 
 function timeLine(lot: LotCardData, now: number) {
   if (lot.status === "live") {
-    return `Termina em ${formatTimeLeft(new Date(lot.endsAt).getTime() - now)}`
+    const left = new Date(lot.endsAt).getTime() - now
+    return left > 0 ? `Termina em ${formatTimeLeft(left)}` : "Encerrando..."
   }
   if (lot.status === "scheduled") {
     return `Começa em ${formatTimeLeft(new Date(lot.startsAt).getTime() - now)}`
