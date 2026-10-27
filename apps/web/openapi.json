@@ -659,6 +659,41 @@
                     "myPseudonym": {
                       "nullable": true,
                       "type": "string"
+                    },
+                    "result": {
+                      "type": "object",
+                      "properties": {
+                        "outcome": {
+                          "nullable": true,
+                          "type": "string",
+                          "enum": [
+                            "sold",
+                            "unsold",
+                            "settling"
+                          ]
+                        },
+                        "finalAmountCents": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "receiptId": {
+                          "nullable": true,
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "winnerPseudonym": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "outcome",
+                        "finalAmountCents",
+                        "receiptId",
+                        "winnerPseudonym"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -677,7 +712,8 @@
                     "originalEndsAt",
                     "bids",
                     "serverNow",
-                    "myPseudonym"
+                    "myPseudonym",
+                    "result"
                   ],
                   "additionalProperties": false
                 }

@@ -171,9 +171,23 @@ export async function getLotDetail(
     .from(bids)
     .where(eq(bids.lotId, lotId))
     .orderBy(asc(bids.seq))
+  const [receipt] = await db
+    .select()
+    .from(receipts)
+    .where(eq(receipts.lotId, lotId))
+
+  const summary = toSummary(lot, now)
+  const outcome =
+    summary.status !== "ended"
+      ? null
+      : receipt
+        ? "sold"
+        : lot.bidCount === 0
+          ? "unsold"
+          : "settling"
 
   return {
-    ...toSummary(lot, now),
+    ...summary,
     bids: rows.map((bid) => ({
       seq: bid.seq,
       pseudonym: chain.pseudonym(lotId, bid.bidderId),
@@ -182,7 +196,15 @@ export async function getLotDetail(
     })),
     serverNow: now.toISOString(),
     myPseudonym: viewerId ? chain.pseudonym(lotId, viewerId) : null,
-  }
+    result: {
+      outcome,
+      finalAmountCents: receipt?.amountCents ?? null,
+      receiptId: receipt?.id ?? null,
+      winnerPseudonym: receipt
+        ? chain.pseudonym(lotId, receipt.winnerId)
+        : null,
+    },
+  } as const
 }
 
 export async function cancelLot(
