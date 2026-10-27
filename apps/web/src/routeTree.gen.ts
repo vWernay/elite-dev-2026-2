@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as EstiloRouteImport } from './routes/estilo'
+import { Route as LotesIdRouteImport } from './routes/lotes.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const EstiloRoute = EstiloRouteImport.update({
   path: '/estilo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LotesIdRoute = LotesIdRouteImport.update({
+  id: '/lotes/$id',
+  path: '/lotes/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
+  '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
+  '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
+  '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cadastro' | '/entrar' | '/estilo'
+  fullPaths: '/' | '/cadastro' | '/entrar' | '/estilo' | '/lotes/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cadastro' | '/entrar' | '/estilo'
-  id: '__root__' | '/' | '/cadastro' | '/entrar' | '/estilo'
+  to: '/' | '/cadastro' | '/entrar' | '/estilo' | '/lotes/$id'
+  id: '__root__' | '/' | '/cadastro' | '/entrar' | '/estilo' | '/lotes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   CadastroRoute: typeof CadastroRoute
   EntrarRoute: typeof EntrarRoute
   EstiloRoute: typeof EstiloRoute
+  LotesIdRoute: typeof LotesIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EstiloRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lotes/$id': {
+      id: '/lotes/$id'
+      path: '/lotes/$id'
+      fullPath: '/lotes/$id'
+      preLoaderRoute: typeof LotesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroRoute: CadastroRoute,
   EntrarRoute: EntrarRoute,
   EstiloRoute: EstiloRoute,
+  LotesIdRoute: LotesIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

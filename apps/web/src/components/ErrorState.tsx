@@ -4,8 +4,10 @@ import { Link } from "@tanstack/react-router"
 import { ApiError } from "../api/fetcher"
 
 function messageOf(error: unknown) {
-  if (error instanceof ApiError) return error.message
-  return "Algo deu errado. Tente novamente."
+  // UNKNOWN: a resposta não veio no formato da API (servidor fora do ar, proxy).
+  if (error instanceof ApiError && error.code !== "UNKNOWN")
+    return error.message
+  return "Não foi possível falar com o servidor. Tente novamente em instantes."
 }
 
 // Para falhas de consulta dentro de uma tela
