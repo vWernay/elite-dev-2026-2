@@ -220,6 +220,9 @@ importers:
       '@fastify/jwt':
         specifier: ^10.2.5
         version: 10.2.5
+      '@fastify/static':
+        specifier: ^10.1.7
+        version: 10.1.7
       '@fastify/swagger':
         specifier: ^9.9.2
         version: 9.9.2
