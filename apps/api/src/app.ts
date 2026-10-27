@@ -1,5 +1,6 @@
 import fastifyCookie from "@fastify/cookie"
 import fastifyJwt from "@fastify/jwt"
+import fastifyStatic from "@fastify/static"
 import fastifySwagger from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
 import { sql } from "drizzle-orm"
@@ -24,13 +25,15 @@ import { auctioneerRoutes, lotRoutes } from "./lots/routes.js"
 import { receiptRoutes } from "./receipts/routes.js"
 import { walletRoutes } from "./wallet/routes.js"
 
-type AppOptions = { sseHeartbeatMs?: number }
+type AppOptions = { sseHeartbeatMs?: number; webDir?: string }
 
 export function buildApp(options: AppOptions = {}) {
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
     // sem isto, o desligamento esperaria os streams SSE abertos para sempre
     forceCloseConnections: true,
+    // atrás do roteador do Heroku: protocolo e IP vêm dos cabeçalhos X-Forwarded
+    trustProxy: true,
   }).withTypeProvider<ZodTypeProvider>()
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
@@ -78,11 +81,34 @@ export function buildApp(options: AppOptions = {}) {
     })
   })
 
-  app.setNotFoundHandler((_request, reply) =>
-    reply
+  if (options.webDir) {
+    app.register(fastifyStatic, {
+      root: options.webDir,
+      setHeaders: (reply, path) => {
+        // Só os arquivos de /assets/ têm o hash no nome e podem ficar em cache
+        // para sempre. O resto (index.html, favicon) é sempre revalidado.
+        const hashed = /[\\/]assets[\\/]/.test(path)
+        reply.header(
+          "Cache-Control",
+          hashed ? "public, max-age=31536000, immutable" : "no-cache",
+        )
+      },
+    })
+  }
+
+  app.setNotFoundHandler((request, reply) => {
+    // Endereço do site (ex.: /lotes/abc): quem responde é o front.
+    const wantsPage =
+      options.webDir &&
+      request.method === "GET" &&
+      !request.url.startsWith("/api/") &&
+      request.headers.accept?.includes("text/html")
+    if (wantsPage) return reply.sendFile("index.html")
+
+    return reply
       .code(404)
-      .send({ error: { code: "NOT_FOUND", message: "Rota não encontrada." } }),
-  )
+      .send({ error: { code: "NOT_FOUND", message: "Rota não encontrada." } })
+  })
 
   app.get("/api/health", async () => {
     await db.execute(sql`select 1`)

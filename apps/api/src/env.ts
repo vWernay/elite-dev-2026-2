@@ -8,6 +8,8 @@ const schema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+  DATABASE_SSL: z.enum(["true", "false"]).optional(),
+  WEB_DIST_DIR: z.string().optional(),
 })
 
 export const env = schema.parse(process.env)

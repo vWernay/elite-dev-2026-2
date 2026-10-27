@@ -3,7 +3,7 @@ import { pool } from "./db/client.js"
 import { env } from "./env.js"
 import { startSettlementWorker } from "./settlement/worker.js"
 
-const app = buildApp()
+const app = buildApp({ webDir: env.WEB_DIST_DIR })
 let worker: ReturnType<typeof startSettlementWorker> | undefined
 
 async function shutdown() {
