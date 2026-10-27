@@ -39,3 +39,26 @@ const rarities: Record<string, string> = {
 }
 
 export const rarityLabel = (rarity: string) => rarities[rarity] ?? rarity
+
+const time = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+})
+
+export const formatTime = (iso: string) => time.format(new Date(iso))
+
+// Contagem da sala: sempre com segundos, para ver o tempo correndo
+export function formatCountdown(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const days = Math.floor(total / 86_400)
+  const hours = Math.floor((total % 86_400) / 3_600)
+  const minutes = Math.floor((total % 3_600) / 60)
+  const seconds = total % 60
+  const pad = (n: number) => String(n).padStart(2, "0")
+
+  if (days > 0) return `${days}d ${hours}h ${pad(minutes)}min`
+  if (hours > 0) return `${hours}h ${pad(minutes)}min ${pad(seconds)}s`
+  if (minutes > 0) return `${minutes}min ${pad(seconds)}s`
+  return `${seconds}s`
+}

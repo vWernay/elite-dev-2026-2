@@ -267,6 +267,32 @@ export type GetApiLotsId200BidsItem = {
   createdAt: string;
 };
 
+/**
+ * @nullable
+ */
+export type GetApiLotsId200ResultOutcome = typeof GetApiLotsId200ResultOutcome[keyof typeof GetApiLotsId200ResultOutcome] | null;
+
+
+export const GetApiLotsId200ResultOutcome = {
+  sold: 'sold',
+  unsold: 'unsold',
+  settling: 'settling',
+} as const;
+
+export type GetApiLotsId200Result = {
+  /** @nullable */
+  outcome: GetApiLotsId200ResultOutcome;
+  /** @nullable */
+  finalAmountCents: number | null;
+  /**
+     * @nullable
+     * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+     */
+  receiptId: string | null;
+  /** @nullable */
+  winnerPseudonym: string | null;
+};
+
 export type GetApiLotsId200 = {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
@@ -287,6 +313,7 @@ export type GetApiLotsId200 = {
   serverNow: string;
   /** @nullable */
   myPseudonym: string | null;
+  result: GetApiLotsId200Result;
 };
 
 export type PostApiLotsIdCancel200Attributes = {

@@ -39,6 +39,12 @@ export const lotDetailSchema = lotSummarySchema.extend({
   ),
   serverNow: z.string(),
   myPseudonym: z.string().nullable(),
+  result: z.object({
+    outcome: z.enum(["sold", "unsold", "settling"]).nullable(),
+    finalAmountCents: z.number().nullable(),
+    receiptId: z.uuid().nullable(),
+    winnerPseudonym: z.string().nullable(),
+  }),
 })
 
 export const auctioneerLotSchema = lotSummarySchema.extend({
