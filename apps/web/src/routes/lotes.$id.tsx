@@ -83,7 +83,16 @@ function LotRoom() {
             <Title order={1}>{lot.title}</Title>
             <BidPanel lot={lot} now={now} user={user} />
             <Stack gap="xs">
-              <Title order={3}>Histórico de lances</Title>
+              <Group justify="space-between" align="baseline">
+                <Title order={3}>Histórico de lances</Title>
+                <RouterAnchor
+                  to="/lotes/$id/auditoria"
+                  params={{ id }}
+                  size="sm"
+                >
+                  Auditar histórico
+                </RouterAnchor>
+              </Group>
               <Text size="sm" c="dimmed">
                 Os licitantes aparecem por um código que muda a cada lote.
               </Text>

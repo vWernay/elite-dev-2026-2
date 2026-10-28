@@ -10,20 +10,34 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ArrematesRouteImport } from './routes/arremates'
 import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as CarteiraRouteImport } from './routes/carteira'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as EstiloRouteImport } from './routes/estilo'
 import { Route as PainelRouteImport } from './routes/painel'
+import { Route as ComprovanteIdRouteImport } from './routes/comprovante.$id'
 import { Route as LotesIdRouteImport } from './routes/lotes.$id'
+import { Route as LotesIdAuditoriaRouteImport } from './routes/lotes.$id_.auditoria'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArrematesRoute = ArrematesRouteImport.update({
+  id: '/arremates',
+  path: '/arremates',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarteiraRoute = CarteiraRouteImport.update({
+  id: '/carteira',
+  path: '/carteira',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EntrarRoute = EntrarRouteImport.update({
@@ -41,60 +55,109 @@ const PainelRoute = PainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComprovanteIdRoute = ComprovanteIdRouteImport.update({
+  id: '/comprovante/$id',
+  path: '/comprovante/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LotesIdRoute = LotesIdRouteImport.update({
   id: '/lotes/$id',
   path: '/lotes/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LotesIdAuditoriaRoute = LotesIdAuditoriaRouteImport.update({
+  id: '/lotes/$id_/auditoria',
+  path: '/lotes/$id/auditoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/arremates': typeof ArrematesRoute
   '/cadastro': typeof CadastroRoute
+  '/carteira': typeof CarteiraRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
   '/painel': typeof PainelRoute
+  '/comprovante/$id': typeof ComprovanteIdRoute
   '/lotes/$id': typeof LotesIdRoute
+  '/lotes/$id/auditoria': typeof LotesIdAuditoriaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/arremates': typeof ArrematesRoute
   '/cadastro': typeof CadastroRoute
+  '/carteira': typeof CarteiraRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
   '/painel': typeof PainelRoute
+  '/comprovante/$id': typeof ComprovanteIdRoute
   '/lotes/$id': typeof LotesIdRoute
+  '/lotes/$id/auditoria': typeof LotesIdAuditoriaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/arremates': typeof ArrematesRoute
   '/cadastro': typeof CadastroRoute
+  '/carteira': typeof CarteiraRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
   '/painel': typeof PainelRoute
+  '/comprovante/$id': typeof ComprovanteIdRoute
   '/lotes/$id': typeof LotesIdRoute
+  '/lotes/$id_/auditoria': typeof LotesIdAuditoriaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/cadastro' | '/entrar' | '/estilo' | '/painel' | '/lotes/$id'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cadastro' | '/entrar' | '/estilo' | '/painel' | '/lotes/$id'
-  id:
-    | '__root__'
     | '/'
+    | '/arremates'
     | '/cadastro'
+    | '/carteira'
     | '/entrar'
     | '/estilo'
     | '/painel'
+    | '/comprovante/$id'
     | '/lotes/$id'
+    | '/lotes/$id/auditoria'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/arremates'
+    | '/cadastro'
+    | '/carteira'
+    | '/entrar'
+    | '/estilo'
+    | '/painel'
+    | '/comprovante/$id'
+    | '/lotes/$id'
+    | '/lotes/$id/auditoria'
+  id:
+    | '__root__'
+    | '/'
+    | '/arremates'
+    | '/cadastro'
+    | '/carteira'
+    | '/entrar'
+    | '/estilo'
+    | '/painel'
+    | '/comprovante/$id'
+    | '/lotes/$id'
+    | '/lotes/$id_/auditoria'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArrematesRoute: typeof ArrematesRoute
   CadastroRoute: typeof CadastroRoute
+  CarteiraRoute: typeof CarteiraRoute
   EntrarRoute: typeof EntrarRoute
   EstiloRoute: typeof EstiloRoute
   PainelRoute: typeof PainelRoute
+  ComprovanteIdRoute: typeof ComprovanteIdRoute
   LotesIdRoute: typeof LotesIdRoute
+  LotesIdAuditoriaRoute: typeof LotesIdAuditoriaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -106,11 +169,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/arremates': {
+      id: '/arremates'
+      path: '/arremates'
+      fullPath: '/arremates'
+      preLoaderRoute: typeof ArrematesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadastro': {
       id: '/cadastro'
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carteira': {
+      id: '/carteira'
+      path: '/carteira'
+      fullPath: '/carteira'
+      preLoaderRoute: typeof CarteiraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/entrar': {
@@ -134,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/comprovante/$id': {
+      id: '/comprovante/$id'
+      path: '/comprovante/$id'
+      fullPath: '/comprovante/$id'
+      preLoaderRoute: typeof ComprovanteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lotes/$id': {
       id: '/lotes/$id'
       path: '/lotes/$id'
@@ -141,16 +225,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LotesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lotes/$id_/auditoria': {
+      id: '/lotes/$id_/auditoria'
+      path: '/lotes/$id/auditoria'
+      fullPath: '/lotes/$id/auditoria'
+      preLoaderRoute: typeof LotesIdAuditoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArrematesRoute: ArrematesRoute,
   CadastroRoute: CadastroRoute,
+  CarteiraRoute: CarteiraRoute,
   EntrarRoute: EntrarRoute,
   EstiloRoute: EstiloRoute,
   PainelRoute: PainelRoute,
+  ComprovanteIdRoute: ComprovanteIdRoute,
   LotesIdRoute: LotesIdRoute,
+  LotesIdAuditoriaRoute: LotesIdAuditoriaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
