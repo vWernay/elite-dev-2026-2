@@ -45,7 +45,7 @@ export function buildApp(options: AppOptions = {}) {
   })
 
   app.register(fastifySwagger, {
-    openapi: { info: { title: "Casa de Leilões API", version: "1.0.0" } },
+    openapi: { info: { title: "Mesa de Lances API", version: "1.0.0" } },
     transform: jsonSchemaTransform,
   })
   app.register(fastifySwaggerUi, { routePrefix: "/api/docs" })

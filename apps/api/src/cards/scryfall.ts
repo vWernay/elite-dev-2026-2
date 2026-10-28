@@ -2,7 +2,7 @@ import { AppError } from "../errors.js"
 
 const BASE_URL = "https://api.scryfall.com"
 const HEADERS = {
-  "User-Agent": "CasaDeLeiloes/1.0",
+  "User-Agent": "MesaDeLances/1.0",
   Accept: "application/json;q=0.9,*/*;q=0.8",
 }
 

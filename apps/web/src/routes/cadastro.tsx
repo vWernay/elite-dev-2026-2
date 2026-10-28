@@ -100,7 +100,7 @@ function RegisterPage() {
           )}
           <div>
             <Text size="sm" fw={500} mb={4}>
-              Como você vai usar a casa de leilões?
+              Como você vai usar a Mesa de Lances?
             </Text>
             <SegmentedControl
               fullWidth
