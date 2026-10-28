@@ -123,7 +123,7 @@ const lotSeeds: Seed[] = [
     startingBidCents: 50_000,
     minIncrementCents: 5_000,
     startsIn: -2 * day,
-    endsIn: 3 * day,
+    endsIn: 30 * day,
     bids: [
       { by: "ana", cents: 50_000, ago: 30 * hour },
       { by: "bruno", cents: 60_000, ago: 26 * hour },
@@ -153,7 +153,7 @@ const lotSeeds: Seed[] = [
     startingBidCents: 3_000,
     minIncrementCents: 500,
     startsIn: -3 * hour,
-    endsIn: 4 * day,
+    endsIn: 30 * day,
     bids: [],
   },
   {
@@ -162,8 +162,8 @@ const lotSeeds: Seed[] = [
     card: cards.counterspell,
     startingBidCents: 1_500,
     minIncrementCents: 250,
-    startsIn: 1 * day,
-    endsIn: 3 * day,
+    startsIn: 14 * day,
+    endsIn: 21 * day,
     bids: [],
   },
   {
