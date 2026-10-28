@@ -7,7 +7,7 @@ export function AppFooter() {
       <Container>
         <Group justify="space-between" py="md" gap="xs">
           <Text size="sm" c="dimmed">
-            Casa de Leilões
+            Mesa de Lances
           </Text>
           <Anchor href="/api/docs" size="sm" c="dimmed" target="_blank">
             Documentação da API

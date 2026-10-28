@@ -5,12 +5,13 @@ import {
   Divider,
   Drawer,
   Group,
+  Image,
   Skeleton,
   Stack,
   Text,
 } from "@mantine/core"
 import { useDisclosure } from "@mantine/hooks"
-import { IconGavel, IconLogout } from "@tabler/icons-react"
+import { IconLogout } from "@tabler/icons-react"
 import { Link } from "@tanstack/react-router"
 import { useSession } from "../../auth/useSession"
 import { ColorSchemeToggle } from "../ColorSchemeToggle"
@@ -47,10 +48,18 @@ export function AppHeader() {
       <Container className={classes.inner}>
         <Group gap="lg">
           <Link to="/" className={classes.brand}>
-            <IconGavel size={22} stroke={1.75} />
-            <Text component="span" fw={700} fz="lg" inherit>
-              Casa de Leilões
-            </Text>
+            <Image
+              src="/logo-extended.png"
+              alt="Mesa de Lances"
+              className={classes.logo}
+              darkHidden
+            />
+            <Image
+              src="/logo-extended-dark.png"
+              alt="Mesa de Lances"
+              className={classes.logo}
+              lightHidden
+            />
           </Link>
           <Group gap={4} visibleFrom="sm">
             {links}

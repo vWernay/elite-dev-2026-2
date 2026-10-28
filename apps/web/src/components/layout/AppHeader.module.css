@@ -24,6 +24,11 @@
   color: inherit;
 }
 
+.logo {
+  width: auto;
+  height: 40px;
+}
+
 .link {
   display: block;
   line-height: 1;
