@@ -30,6 +30,7 @@ import {
 import type { SessionUser } from "../../auth/session"
 import { formatCents, formatCountdown, formatDateTime } from "../../lib/format"
 import { Money } from "../Money"
+import { RouterAnchor } from "../RouterAnchor"
 import { RouterButton } from "../RouterButton"
 import { StatusBadge } from "../StatusBadge"
 import { bidderLabel } from "./BidHistory"
@@ -312,6 +313,17 @@ function Result({
       >
         {bidderLabel(winnerPseudonym)} por {formatCents(finalAmountCents)}.
         {!won && participated && " Você não arrematou desta vez."}
+        {lot.result.receiptId && (
+          <Text size="sm" mt={6}>
+            <RouterAnchor
+              to="/comprovante/$id"
+              params={{ id: lot.result.receiptId }}
+              size="sm"
+            >
+              Ver comprovante
+            </RouterAnchor>
+          </Text>
+        )}
       </Alert>
     )
   }

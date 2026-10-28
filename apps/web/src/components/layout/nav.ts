@@ -11,6 +11,8 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { to: "/", label: "Vitrine" },
   { to: "/painel", label: "Painel", roles: ["auctioneer"] },
+  { to: "/carteira", label: "Carteira", roles: ["bidder"] },
+  { to: "/arremates", label: "Meus arremates", roles: ["bidder"] },
 ]
 
 export const roleLabel: Record<Role, string> = {

@@ -9,6 +9,7 @@ import { Link, useRouter } from "@tanstack/react-router"
 import { useGetApiWallet, usePostApiAuthLogout } from "../../api/generated/api"
 import { clearSession, type SessionUser } from "../../auth/session"
 import { Money } from "../Money"
+import { RouterAnchor } from "../RouterAnchor"
 import { roleLabel } from "./nav"
 
 export function useLogout() {
@@ -45,14 +46,14 @@ export function HeaderBalance() {
   const { data } = useGetApiWallet({ query: { staleTime: 10_000 } })
   if (!data) return null
   return (
-    <Text size="sm" c="dimmed">
+    <RouterAnchor to="/carteira" size="sm" c="dimmed" underline="never">
       Disponível{" "}
       <Money
         cents={data.data.availableCents}
         fw={600}
         c="var(--mantine-color-text)"
       />
-    </Text>
+    </RouterAnchor>
   )
 }
 
