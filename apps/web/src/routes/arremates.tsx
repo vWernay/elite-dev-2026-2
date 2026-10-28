@@ -37,6 +37,7 @@ const stateLabel = {
   outbid: "Superado",
   won: "Arrematado",
   lost: "Perdido",
+  cancelled: "Cancelado",
 } as const
 
 const filters = {

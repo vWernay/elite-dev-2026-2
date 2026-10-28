@@ -725,6 +725,22 @@
     },
     "/api/lots/{id}/cancel": {
       "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "nullable": true,
+                "type": "object",
+                "properties": {
+                  "confirmBids": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
         "parameters": [
           {
             "schema": {
@@ -1510,7 +1526,8 @@
                               "leading",
                               "outbid",
                               "won",
-                              "lost"
+                              "lost",
+                              "cancelled"
                             ]
                           },
                           "myHighestBidCents": {

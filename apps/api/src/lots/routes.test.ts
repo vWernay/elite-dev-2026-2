@@ -13,7 +13,8 @@ import { buildApp } from "../app.js"
 import { chain } from "../audit/index.js"
 import { placeBid } from "../bids/service.js"
 import { db } from "../db/client.js"
-import { bids, lots, receipts } from "../db/schema.js"
+import { bids, lots, receipts, users } from "../db/schema.js"
+import { settleLot } from "../settlement/service.js"
 import { signUp as register } from "../test/auth.js"
 import {
   addMs,
@@ -486,7 +487,7 @@ describe("POST /api/lots/:id/cancel", () => {
     expect(again.json().status).toBe("cancelled")
   })
 
-  it("recusa lote que já recebeu lances", async () => {
+  it("com lances, exige confirmação e a mensagem diz quantos", async () => {
     const { id, cookies } = await signUp("auctioneer")
     const lot = await createLot(id, live())
     const bidder = await createUser({ balanceCents: 50_000 })
@@ -495,8 +496,87 @@ describe("POST /api/lots/:id/cancel", () => {
     const response = await cancel(lot.id, cookies)
     expect(response.statusCode).toBe(409)
     expect(response.json().error.code).toBe("LOT_HAS_BIDS")
+    expect(response.json().error.message).toContain("1 lance.")
     const [saved] = await db.select().from(lots).where(eq(lots.id, lot.id))
     expect(saved.cancelledAt).toBeNull()
+  })
+
+  describe("com lances e confirmação", () => {
+    const cancelConfirmed = (id: string, cookies: Cookies) =>
+      app.inject({
+        method: "POST",
+        url: `/api/lots/${id}/cancel`,
+        cookies,
+        payload: { confirmBids: true },
+      })
+
+    // Ana lidera o lote com R$ 150,00 e tem R$ 500,00 de saldo
+    async function setup() {
+      const { id, cookies } = await signUp("auctioneer")
+      const lot = await createLot(id, live())
+      const ana = await signUp("bidder")
+      await db
+        .update(users)
+        .set({ balanceCents: 50_000 })
+        .where(eq(users.id, ana.id))
+      await placeBid({ lotId: lot.id, bidderId: ana.id, amountCents: 15_000 })
+      return { lot, cookies, ana }
+    }
+
+    const wallet = async (cookies: Cookies) =>
+      (await getJson("/api/wallet", cookies)).json()
+
+    it("cancela e libera o valor reservado, sem mexer no saldo", async () => {
+      const { lot, cookies, ana } = await setup()
+      expect((await wallet(ana.cookies)).committedCents).toBe(15_000)
+
+      const response = await cancelConfirmed(lot.id, cookies)
+      expect(response.statusCode).toBe(200)
+      expect(response.json().status).toBe("cancelled")
+
+      expect(await wallet(ana.cookies)).toMatchObject({
+        balanceCents: 50_000,
+        committedCents: 0,
+        availableCents: 50_000,
+      })
+    })
+
+    it("o lote cancelado recusa lances e não é liquidado", async () => {
+      const { lot, cookies, ana } = await setup()
+      await cancelConfirmed(lot.id, cookies)
+
+      await expect(
+        placeBid({ lotId: lot.id, bidderId: ana.id, amountCents: 20_000 }),
+      ).rejects.toMatchObject({ code: "LOT_CANCELLED" })
+
+      const later = addMs(new Date(), hours(3))
+      expect(await settleLot(lot.id, () => later)).toMatchObject({
+        outcome: "skipped",
+      })
+      const [saved] = await db.select().from(lots).where(eq(lots.id, lot.id))
+      expect(saved.settledAt).toBeNull()
+      expect(await db.select().from(receipts)).toHaveLength(0)
+    })
+
+    it("o histórico de lances continua auditável", async () => {
+      const { lot, cookies } = await setup()
+      await cancelConfirmed(lot.id, cookies)
+
+      const audit = await getJson(`/api/lots/${lot.id}/audit`)
+      expect(audit.statusCode).toBe(200)
+      expect(audit.json()).toMatchObject({
+        status: "cancelled",
+        verdict: "intact",
+      })
+      expect(audit.json().bids).toHaveLength(1)
+    })
+
+    it("outro leiloeiro não consegue cancelar", async () => {
+      const { lot } = await setup()
+      const other = await signUp("auctioneer", "outro@teste.com")
+      const response = await cancelConfirmed(lot.id, other.cookies)
+      expect(response.statusCode).toBe(403)
+    })
   })
 
   it("recusa lote já liquidado", async () => {

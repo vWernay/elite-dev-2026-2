@@ -316,6 +316,13 @@ export type GetApiLotsId200 = {
   result: GetApiLotsId200Result;
 };
 
+/**
+ * @nullable
+ */
+export type PostApiLotsIdCancelBody = {
+  confirmBids?: boolean;
+} | null;
+
 export type PostApiLotsIdCancel200Attributes = {
   set?: string;
   rarity?: string;
@@ -588,6 +595,7 @@ export const GetApiBidderLots200LotsItemState = {
   outbid: 'outbid',
   won: 'won',
   lost: 'lost',
+  cancelled: 'cancelled',
 } as const;
 
 export type GetApiBidderLots200LotsItem = {
@@ -1379,14 +1387,29 @@ export const getPostApiLotsIdCancelUrl = (id: string,) => {
   return `/api/lots/${id}/cancel`
 }
 
-export const postApiLotsIdCancel = async (id: string, options?: Parameters<typeof apiFetch>[1]): Promise<postApiLotsIdCancelResponse> => {
+export const postApiLotsIdCancel = async (id: string,
+    postApiLotsIdCancelBody: PostApiLotsIdCancelBody, options?: Parameters<typeof apiFetch>[1]): Promise<postApiLotsIdCancelResponse> => {
 
-  return apiFetch<postApiLotsIdCancelResponse>(getPostApiLotsIdCancelUrl(id),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiFetch<postApiLotsIdCancelResponse>(getPostApiLotsIdCancelUrl(id),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(postApiLotsIdCancelBody)
   }
 );}
 
@@ -1411,9 +1434,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof postApiLotsIdCancel>>, PostApiLotsIdCancelMutationVariables> = (props) => {
-          const {id} = props ?? {};
+          const {id,data} = props ?? {};
 
-          return  postApiLotsIdCancel(id,requestOptions)
+          return  postApiLotsIdCancel(id,data,requestOptions)
         }
 
 
@@ -1424,9 +1447,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PostApiLotsIdCancelMutationResult = NonNullable<Awaited<ReturnType<typeof postApiLotsIdCancel>>>
-
+    export type PostApiLotsIdCancelMutationBody = PostApiLotsIdCancelBody
     export type PostApiLotsIdCancelMutationError = unknown
-    export type PostApiLotsIdCancelMutationVariables = {id: string}
+    export type PostApiLotsIdCancelMutationVariables = {id: string;data: PostApiLotsIdCancelBody}
 
     export const usePostApiLotsIdCancel = <TError = unknown,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postApiLotsIdCancel>>, TError,PostApiLotsIdCancelMutationVariables, TContext>, request?: SecondParameter<typeof apiFetch>}

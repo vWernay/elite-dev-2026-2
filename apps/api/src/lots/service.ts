@@ -207,9 +207,12 @@ export async function getLotDetail(
   } as const
 }
 
+// Com lances, só cancela se o leiloeiro confirmar.
+// O estorno é automático. O saldo só é debitado na liquidação, então o valor comprometido some junto.
 export async function cancelLot(
   lotId: string,
   auctioneerId: string,
+  { confirmBids = false }: { confirmBids?: boolean } = {},
   now = new Date(),
 ) {
   let cancelledNow = false
@@ -236,11 +239,11 @@ export async function cancelLot(
         "Este lote já foi liquidado.",
       )
     }
-    if (lot.bidCount > 0) {
+    if (lot.bidCount > 0 && !confirmBids) {
       throw new AppError(
         409,
         "LOT_HAS_BIDS",
-        "Não é possível cancelar um lote que já recebeu lances.",
+        `Este lote já recebeu ${lot.bidCount} ${lot.bidCount === 1 ? "lance" : "lances"}. Confirme o cancelamento para estornar o valor reservado.`,
       )
     }
 

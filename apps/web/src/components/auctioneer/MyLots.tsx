@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Group,
   Image,
@@ -10,7 +11,7 @@ import {
   Text,
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
-import { IconGavel } from "@tabler/icons-react"
+import { IconAlertTriangle, IconGavel } from "@tabler/icons-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { ApiError } from "../../api/fetcher"
@@ -65,7 +66,7 @@ function Result({ lot }: { lot: Lot }) {
 }
 
 const canCancel = (lot: Lot) =>
-  (lot.status === "live" || lot.status === "scheduled") && lot.bidCount === 0
+  lot.status === "live" || lot.status === "scheduled"
 
 export function Stats({
   lots,
@@ -123,7 +124,8 @@ export function MyLots() {
   const confirmCancel = () => {
     if (!toCancel) return
     cancel.mutate(
-      { id: toCancel.id },
+      // Com lances, o botão do modal é a confirmação que a API exige
+      { id: toCancel.id, data: { confirmBids: toCancel.bidCount > 0 } },
       {
         onSuccess: () => {
           notifications.show({
@@ -255,10 +257,18 @@ export function MyLots() {
         centered
       >
         <Stack>
-          <Text size="sm">
-            {toCancel?.title} sai da vitrine. Só é possível cancelar enquanto
-            não houver lances.
-          </Text>
+          <Text size="sm">{toCancel?.title} sai da vitrine.</Text>
+          {toCancel && toCancel.bidCount > 0 && (
+            <Alert
+              color="orange"
+              icon={<IconAlertTriangle size={18} />}
+              title={`Este lote tem ${toCancel.bidCount} ${toCancel.bidCount === 1 ? "lance" : "lances"}`}
+            >
+              O cancelamento não pode ser desfeito. Os lances deixam de valer e
+              o valor reservado de quem lidera é liberado na hora. O histórico
+              continua disponível para auditoria.
+            </Alert>
+          )}
           <Group justify="flex-end">
             <Button variant="default" onClick={() => setToCancel(null)}>
               Voltar
