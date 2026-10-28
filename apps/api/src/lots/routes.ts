@@ -76,9 +76,16 @@ export const lotRoutes: FastifyPluginAsyncZod = async (app) => {
     "/:id/cancel",
     {
       preHandler: requireRole("auctioneer"),
-      schema: { params: idParams, response: { 200: lotSummarySchema } },
+      schema: {
+        params: idParams,
+        body: z.object({ confirmBids: z.boolean().optional() }).nullish(),
+        response: { 200: lotSummarySchema },
+      },
     },
-    async (request) => cancelLot(request.params.id, request.user.sub),
+    async (request) =>
+      cancelLot(request.params.id, request.user.sub, {
+        confirmBids: request.body?.confirmBids,
+      }),
   )
 }
 

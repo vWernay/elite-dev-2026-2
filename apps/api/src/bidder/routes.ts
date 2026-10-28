@@ -7,7 +7,7 @@ import { bids, lots, receipts } from "../db/schema.js"
 import { lotSummarySchema } from "../lots/schemas.js"
 import { toSummary } from "../lots/service.js"
 
-const stateSchema = z.enum(["leading", "outbid", "won", "lost"])
+const stateSchema = z.enum(["leading", "outbid", "won", "lost", "cancelled"])
 
 const bidderLotSchema = lotSummarySchema.extend({
   state: stateSchema,
@@ -46,13 +46,15 @@ export const bidderRoutes: FastifyPluginAsyncZod = async (app) => {
       return {
         lots: rows.map(({ lot, receipt }) => {
           const leading = lot.leaderId === userId
-          const state = receipt
-            ? receipt.winnerId === userId
-              ? "won"
-              : "lost"
-            : leading
-              ? "leading"
-              : "outbid"
+          const state = lot.cancelledAt
+            ? "cancelled"
+            : receipt
+              ? receipt.winnerId === userId
+                ? "won"
+                : "lost"
+              : leading
+                ? "leading"
+                : "outbid"
           return {
             ...toSummary(lot, now),
             state,

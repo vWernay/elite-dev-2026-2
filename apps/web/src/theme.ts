@@ -33,4 +33,5 @@ export const bidStateColor = {
   outbid: "orange",
   won: "green",
   lost: "gray",
+  cancelled: "gray",
 } as const

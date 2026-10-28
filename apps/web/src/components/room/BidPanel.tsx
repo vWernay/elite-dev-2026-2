@@ -285,6 +285,13 @@ function Result({
         title="Lote cancelado"
       >
         O leiloeiro cancelou este lote.
+        {mine && lot.bids.some((bid) => bid.pseudonym === mine) && (
+          <>
+            {" "}
+            Seus lances deixaram de valer e o valor reservado foi liberado no
+            seu saldo.
+          </>
+        )}
       </Alert>
     )
   }
@@ -357,7 +364,9 @@ export function BidPanel({ lot, now, user }: Props) {
               ? "Lance inicial"
               : phase === "ended"
                 ? "Lance final"
-                : "Lance atual"}
+                : phase === "cancelled"
+                  ? "Último lance"
+                  : "Lance atual"}
           </Text>
           <Money
             cents={lot.currentBidCents ?? lot.startingBidCents}
