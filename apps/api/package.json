@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate --name init",
     "db:migrate": "node --env-file=../../.env --import tsx src/db/migrate.ts",
     "openapi:export": "tsx --env-file=../../.env src/openapi.ts ../web/openapi.json",
-    "migrate": "node dist/db/migrate.js"
+    "migrate": "node dist/db/migrate.js",
+    "seed": "node --env-file=../../.env --import tsx src/seed.ts"
   },
   "keywords": [],
   "author": "",
