@@ -3,7 +3,7 @@ import { eq, inArray } from "drizzle-orm"
 import { chain } from "./audit/index.js"
 import { placeBid } from "./bids/service.js"
 import { db, pool } from "./db/client.js"
-import { bids, bids, lots, receipts, users } from "./db/schema.js"
+import { bids, lots, receipts, users } from "./db/schema.js"
 import { settleLot } from "./settlement/service.js"
 
 // Dados de demo
