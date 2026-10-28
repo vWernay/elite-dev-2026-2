@@ -8,7 +8,10 @@ export type NavItem = {
   roles?: Role[]
 }
 
-export const navItems: NavItem[] = [{ to: "/", label: "Vitrine" }]
+export const navItems: NavItem[] = [
+  { to: "/", label: "Vitrine" },
+  { to: "/painel", label: "Painel", roles: ["auctioneer"] },
+]
 
 export const roleLabel: Record<Role, string> = {
   bidder: "Licitante",

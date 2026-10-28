@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as EstiloRouteImport } from './routes/estilo'
+import { Route as PainelRouteImport } from './routes/painel'
 import { Route as LotesIdRouteImport } from './routes/lotes.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const EstiloRoute = EstiloRouteImport.update({
   path: '/estilo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PainelRoute = PainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LotesIdRoute = LotesIdRouteImport.update({
   id: '/lotes/$id',
   path: '/lotes/$id',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof CadastroRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
+  '/painel': typeof PainelRoute
   '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
+  '/painel': typeof PainelRoute
   '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,23 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/entrar': typeof EntrarRoute
   '/estilo': typeof EstiloRoute
+  '/painel': typeof PainelRoute
   '/lotes/$id': typeof LotesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cadastro' | '/entrar' | '/estilo' | '/lotes/$id'
+  fullPaths:
+    '/' | '/cadastro' | '/entrar' | '/estilo' | '/painel' | '/lotes/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cadastro' | '/entrar' | '/estilo' | '/lotes/$id'
-  id: '__root__' | '/' | '/cadastro' | '/entrar' | '/estilo' | '/lotes/$id'
+  to: '/' | '/cadastro' | '/entrar' | '/estilo' | '/painel' | '/lotes/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/cadastro'
+    | '/entrar'
+    | '/estilo'
+    | '/painel'
+    | '/lotes/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +93,7 @@ export interface RootRouteChildren {
   CadastroRoute: typeof CadastroRoute
   EntrarRoute: typeof EntrarRoute
   EstiloRoute: typeof EstiloRoute
+  PainelRoute: typeof PainelRoute
   LotesIdRoute: typeof LotesIdRoute
 }
 
@@ -109,6 +127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EstiloRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/painel': {
+      id: '/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof PainelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lotes/$id': {
       id: '/lotes/$id'
       path: '/lotes/$id'
@@ -124,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   CadastroRoute: CadastroRoute,
   EntrarRoute: EntrarRoute,
   EstiloRoute: EstiloRoute,
+  PainelRoute: PainelRoute,
   LotesIdRoute: LotesIdRoute,
 }
 export const routeTree = rootRouteImport
