@@ -42,11 +42,7 @@ Para ver o tempo real, abra a sala do mesmo lote em dois navegadores (ou uma jan
 | Comprovante de arremate (público) | `/comprovante/:id` |
 | Entrar e cadastro | `/entrar`, `/cadastro` |
 
-<<<<<<< HEAD
 Os opcionais feitos: busca e filtro de lotes, cancelamento de lote com estorno automático, Docker Compose, testes automatizados e dark mode.
-=======
-Os opcionais foram todos feitos: busca e filtro de lotes, cancelamento de lote com estorno automático, Docker Compose, testes automatizados e dark mode.
->>>>>>> ba53a7453cdce7ba5e8056d8406bdc1e246247e1
 
 ## Stack
 
@@ -54,11 +50,7 @@ Os opcionais foram todos feitos: busca e filtro de lotes, cancelamento de lote c
 - **API:** Node.js, TypeScript, Fastify, Zod (`fastify-type-provider-zod`), Drizzle ORM, PostgreSQL, Swagger.
 - **Web:** React, TypeScript, Vite, TanStack Router, TanStack Query, Mantine. O cliente da API é gerado pelo Orval a partir do OpenAPI.
 - **Tempo real:** Server-Sent Events (SSE).
-<<<<<<< HEAD
 - **Testes:** Vitest, rodando contra um Postgres real.
-=======
-- **Testes:** Vitest, rodando contra um Postgres de verdade.
->>>>>>> ba53a7453cdce7ba5e8056d8406bdc1e246247e1
 - **Lint e formatação:** Biome.
 
 Em produção, a API também serve o build do front. Front e API ficam na mesma origem, então não há CORS, e a sessão é um cookie `httpOnly`.
@@ -79,11 +71,7 @@ pnpm install
 
 # 2. Variáveis de ambiente
 cp .env.example .env
-<<<<<<< HEAD
 # Preencha AUDIT_SECRET e JWT_SECRET com valores diferentes. Dica: para gerar cada um:
-=======
-# Preencha AUDIT_SECRET e JWT_SECRET com valores diferentes. Para gerar cada um:
->>>>>>> ba53a7453cdce7ba5e8056d8406bdc1e246247e1
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # 3. Banco de dados
@@ -120,11 +108,7 @@ Abra http://localhost:5173. Em desenvolvimento, o Vite encaminha `/api` para a A
 pnpm test                       # testes da API
 pnpm lint                       # Biome
 pnpm build                      # build da API e do front
-<<<<<<< HEAD
 pnpm --filter api seed          # recria os dados de demonstração
-=======
-pnpm --filter api seed          # recria os dados de demonstração (ver abaixo)
->>>>>>> ba53a7453cdce7ba5e8056d8406bdc1e246247e1
 
 # Depois de mudar uma rota da API, para atualizar o cliente do front:
 pnpm --filter api openapi:export
@@ -298,18 +282,6 @@ A auditoria, o comprovante e o stream SSE nunca mostram nome ou e-mail. Cada lic
 - O pseudônimo muda de um lote para outro, então não dá para cruzar a atividade de alguém entre lotes.
 - Quando o usuário está logado, a API informa qual é o pseudônimo dele naquele lote. É com isso que a sala mostra "você está ganhando" ou "você foi superado".
 
-<<<<<<< HEAD
-=======
-## Interpretações do enunciado
-
-- **Anti-sniping:** "estende o fim do lote para +2 minutos" foi lido como "o lote passa a terminar 2 minutos depois do lance", e não como "somar 2 minutos ao fim atual". Assim sempre restam exatamente 2 minutos após um lance de última hora.
-- **Papéis:** cada usuário tem um único papel, escolhido no cadastro.
-- **Lote cancelado:** um lance nele recebe o código próprio `LOT_CANCELLED`, além dos cinco motivos de recusa listados no enunciado.
-- **Cancelamento com lances:** o enunciado pede cancelamento só de lotes sem lances, e o opcional pede cancelamento com estorno. Os dois convivem:
-  - lote sem lances: cancela direto;
-  - lote com lances: o leiloeiro precisa confirmar, e o valor reservado de quem lidera é liberado.
-
->>>>>>> ba53a7453cdce7ba5e8056d8406bdc1e246247e1
 ## Comportamentos que vale conhecer
 
 - **Comprovante e saldo após o fim do lote:** o lote aparece como encerrado no segundo exato em que termina, mas o comprovante e a movimentação de saldo aparecem até uns 2 segundos depois, no próximo ciclo do worker.
@@ -318,11 +290,7 @@ A auditoria, o comprovante e o stream SSE nunca mostram nome ou e-mail. Cada lic
 - **Imagens:** a cópia do item guarda a URL da imagem, não o arquivo. As imagens ficam na CDN do Scryfall (`cards.scryfall.io`), que é separada da API, mas se essa CDN cair as imagens não carregam.
 - **Uma instância só:** os eventos SSE são distribuídos em memória e o worker roda dentro do processo. O app foi feito para uma única instância. Para escalar horizontalmente, seria preciso trocar a distribuição de eventos (por exemplo, por `LISTEN/NOTIFY` do Postgres).
 - **Recarga periódica:** a sala também busca o lote de novo a cada 20 s, como garantia para quando a conexão SSE cair sem avisar. A vitrine, o painel e "Meus arremates" atualizam a cada 15 s.
-<<<<<<< HEAD
-- **Rota `/estilo`:** é o guia visual do tema, usado durante o desenvolvimento.
-=======
 - **Rota `/estilo`:** é o guia visual do tema, usado durante o desenvolvimento. Só existe em modo de desenvolvimento; em produção, redireciona para a vitrine.
->>>>>>> ba53a7453cdce7ba5e8056d8406bdc1e246247e1
 
 ## Estrutura
 
