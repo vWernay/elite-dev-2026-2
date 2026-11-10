@@ -114,6 +114,8 @@ pnpm --filter api openapi:export
 pnpm --filter web api:generate
 ```
 
+O `pnpm install` também instala um hook de pre-commit (`simple-git-hooks` com `lint-staged`). Ele roda o Biome nos arquivos do commit e recusa o commit se algo estiver fora do padrão; `pnpm lint:fix` corrige. O hook cobre só lint e formatação: typecheck e testes continuam manuais (`pnpm -r typecheck`, `pnpm test`).
+
 Os testes precisam do Postgres do Docker Compose rodando. O banco `leilao_test` é criado e migrado automaticamente na primeira execução.
 
 O seed pode ser rodado de novo quantas vezes quiser. Ele recria as três contas demo e os cinco lotes, que têm ids fixos, e não mexe em outros dados.
