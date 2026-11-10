@@ -1,5 +1,7 @@
 # Mesa de Lances
 
+[![CI](https://github.com/vWernay/elite-dev-2026-2/actions/workflows/ci.yml/badge.svg)](https://github.com/vWernay/elite-dev-2026-2/actions/workflows/ci.yml)
+
 Casa de leilões online de cartas de Magic: The Gathering, feita para o teste técnico Elite Dev da Verzel.
 
 O leiloeiro busca cartas na API pública do [Scryfall](https://scryfall.com/docs/api) e monta lotes com elas. Os licitantes depositam um saldo simulado e disputam os lotes com lances ao vivo. Quem vence recebe um comprovante com link para compartilhar. Qualquer pessoa, mesmo sem login, consegue auditar o histórico de lances de um lote e ver se ele foi adulterado.
@@ -106,6 +108,7 @@ Abra http://localhost:5173. Em desenvolvimento, o Vite encaminha `/api` para a A
 ```bash
 pnpm test                       # testes da API
 pnpm lint                       # Biome
+pnpm typecheck                  # tsc na API e no front
 pnpm build                      # build da API e do front
 pnpm --filter api seed          # recria os dados de demonstração
 
