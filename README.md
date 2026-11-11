@@ -41,7 +41,15 @@ Para ver o tempo real, abra a sala do mesmo lote em dois navegadores (ou uma jan
 | Comprovante de arremate (público)                                                              | `/comprovante/:id`     |
 | Entrar e cadastro                                                                              | `/entrar`, `/cadastro` |
 
-Os opcionais feitos: busca e filtro de lotes, cancelamento de lote com estorno automático, Docker Compose, testes automatizados e dark mode.
+Opcionais:
+
+| Opcional                                    | Situação                                                                                                                   |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Busca e filtro de lotes                     | Feito                                                                                                                      |
+| Cancelamento de lote com estorno automático | Feito                                                                                                                      |
+| Testes automatizados                        | Feito: testes da API com Vitest, contra um Postgres real. O front ainda não tem testes                                     |
+| Dark mode                                   | Feito                                                                                                                      |
+| Docker Compose                              | **Parcial:** o `docker-compose.yml` sobe só o Postgres. API e front rodam fora de contêiner (veja "Como rodar localmente") |
 
 ## Stack
 
