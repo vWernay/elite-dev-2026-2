@@ -3,7 +3,6 @@
 Casa de leilões online de cartas de Magic: The Gathering, feita para o teste técnico Elite Dev da Verzel.
 
 O leiloeiro busca cartas na API pública do [Scryfall](https://scryfall.com/docs/api) e monta lotes com elas. Os licitantes depositam um saldo simulado e disputam os lotes com lances ao vivo. Quem vence recebe um comprovante com link para compartilhar. Qualquer pessoa, mesmo sem login, consegue auditar o histórico de lances de um lote e ver se ele foi adulterado.
-
 - **Deploy:** https://leilao-verzel-418ab1d62f19.herokuapp.com/
 - **Documentação da API (Swagger):** https://leilao-verzel-418ab1d62f19.herokuapp.com/api/docs
 
@@ -11,36 +10,36 @@ O leiloeiro busca cartas na API pública do [Scryfall](https://scryfall.com/docs
 
 O seed cria estas contas, todas com a senha `senha12345`:
 
-| Papel | E-mail | Saldo inicial |
-| --- | --- | --- |
-| Leiloeiro | `leiloeiro@demo.com` | R$ 0,00 |
-| Licitante | `ana@demo.com` | R$ 10.000,00 |
-| Licitante | `bruno@demo.com` | R$ 10.000,00 |
+| Papel     | E-mail               | Saldo inicial |
+| --------- | -------------------- | ------------- |
+| Leiloeiro | `leiloeiro@demo.com` | R$ 0,00       |
+| Licitante | `ana@demo.com`       | R$ 10.000,00  |
+| Licitante | `bruno@demo.com`     | R$ 10.000,00  |
 
 E estes lotes:
 
-| Lote | Situação |
-| --- | --- |
-| Black Lotus | Ao vivo, com 5 lances entre Ana e Bruno. Termina 30 dias depois do seed |
-| Lightning Bolt | Ao vivo, com 3 lances. Termina 25 minutos depois do seed, para ver a contagem regressiva e o anti-sniping |
-| Birds of Paradise | Ao vivo, sem lances |
-| Counterspell | Agendado: começa 14 dias depois do seed |
-| Serra Angel | Encerrado e arrematado pela Ana, com comprovante |
+| Lote              | Situação                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Black Lotus       | Ao vivo, com 5 lances entre Ana e Bruno. Termina 30 dias depois do seed                                   |
+| Lightning Bolt    | Ao vivo, com 3 lances. Termina 25 minutos depois do seed, para ver a contagem regressiva e o anti-sniping |
+| Birds of Paradise | Ao vivo, sem lances                                                                                       |
+| Counterspell      | Agendado: começa 14 dias depois do seed                                                                   |
+| Serra Angel       | Encerrado e arrematado pela Ana, com comprovante                                                          |
 
 Para ver o tempo real, abra a sala do mesmo lote em dois navegadores (ou uma janela anônima), um logado como Ana e outro como Bruno, e dê lances alternados.
 
 ## Funcionalidades
 
-| Tela | Rota |
-| --- | --- |
-| Vitrine de lotes, separada em ao vivo, agendados e encerrados, com busca por título ou coleção | `/` |
-| Sala do lote ao vivo | `/lotes/:id` |
-| Página de auditoria (pública) | `/lotes/:id/auditoria` |
-| Painel do leiloeiro | `/painel` |
-| Carteira do licitante | `/carteira` |
-| Meus arremates | `/arremates` |
-| Comprovante de arremate (público) | `/comprovante/:id` |
-| Entrar e cadastro | `/entrar`, `/cadastro` |
+| Tela                                                                                           | Rota                   |
+| ---------------------------------------------------------------------------------------------- | ---------------------- |
+| Vitrine de lotes, separada em ao vivo, agendados e encerrados, com busca por título ou coleção | `/`                    |
+| Sala do lote ao vivo                                                                           | `/lotes/:id`           |
+| Página de auditoria (pública)                                                                  | `/lotes/:id/auditoria` |
+| Painel do leiloeiro                                                                            | `/painel`              |
+| Carteira do licitante                                                                          | `/carteira`            |
+| Meus arremates                                                                                 | `/arremates`           |
+| Comprovante de arremate (público)                                                              | `/comprovante/:id`     |
+| Entrar e cadastro                                                                              | `/entrar`, `/cadastro` |
 
 Os opcionais feitos: busca e filtro de lotes, cancelamento de lote com estorno automático, Docker Compose, testes automatizados e dark mode.
 
@@ -90,17 +89,17 @@ Abra http://localhost:5173. Em desenvolvimento, o Vite encaminha `/api` para a A
 
 ### Variáveis de ambiente
 
-| Variável | Obrigatória | Descrição |
-| --- | --- | --- |
-| `DATABASE_URL` | sim | URL de conexão do Postgres |
-| `AUDIT_SECRET` | sim | Chave da cadeia de HMAC (mínimo de 32 caracteres). Nunca é gravada no banco |
-| `JWT_SECRET` | sim | Chave de assinatura da sessão (mínimo de 32 caracteres) |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | só local | Usadas pelo Docker Compose |
-| `PORT` | não | Porta da API. Padrão: `3000` |
-| `NODE_ENV` | não | `development`, `production` ou `test`. Em `production`, o cookie de sessão passa a ser `Secure` |
-| `DATABASE_SSL` | não | `true` ou `false`. Padrão: ligado só em produção |
-| `WEB_DIST_DIR` | não | Pasta do build do front que a API serve. Definida na imagem Docker |
-| `TEST_DATABASE_URL` | não | Banco dos testes. Padrão: `leilao_test` no Postgres local |
+| Variável                                            | Obrigatória | Descrição                                                                                       |
+| --------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                      | sim         | URL de conexão do Postgres                                                                      |
+| `AUDIT_SECRET`                                      | sim         | Chave da cadeia de HMAC (mínimo de 32 caracteres). Nunca é gravada no banco                     |
+| `JWT_SECRET`                                        | sim         | Chave de assinatura da sessão (mínimo de 32 caracteres)                                         |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | só local    | Usadas pelo Docker Compose                                                                      |
+| `PORT`                                              | não         | Porta da API. Padrão: `3000`                                                                    |
+| `NODE_ENV`                                          | não         | `development`, `production` ou `test`. Em `production`, o cookie de sessão passa a ser `Secure` |
+| `DATABASE_SSL`                                      | não         | `true` ou `false`. Padrão: ligado só em produção                                                |
+| `WEB_DIST_DIR`                                      | não         | Pasta do build do front que a API serve. Definida na imagem Docker                              |
+| `TEST_DATABASE_URL`                                 | não         | Banco dos testes. Padrão: `leilao_test` no Postgres local                                       |
 
 ### Outros comandos
 
@@ -137,7 +136,6 @@ heroku run "node dist/seed.js" -a leilao-verzel      # dados de demonstração
 ### Regras de lance
 
 Um lance só é aceito se todas estas condições forem verdadeiras:
-
 1. Quem dá o lance é licitante. Leiloeiros não dão lance.
 2. O lote está ao vivo: começou e ainda não terminou.
 3. O licitante não é quem já lidera o lote.
@@ -148,19 +146,18 @@ Um lance só é aceito se todas estas condições forem verdadeiras:
 
 Cada recusa tem um código próprio, e o front mostra uma mensagem com o motivo:
 
-| Código | Mensagem |
-| --- | --- |
-| `BID_BELOW_MINIMUM` | O lance mínimo agora é R$ X. |
+| Código               | Mensagem                              |
+| -------------------- | ------------------------------------- |
+| `BID_BELOW_MINIMUM`  | O lance mínimo agora é R$ X.          |
 | `INSUFFICIENT_FUNDS` | Saldo insuficiente. Disponível: R$ X. |
-| `ALREADY_WINNING` | Você já está ganhando este lote. |
-| `LOT_NOT_STARTED` | Este lote ainda não começou. |
-| `LOT_ENDED` | Este lote já foi encerrado. |
-| `LOT_CANCELLED` | Este lote foi cancelado. |
+| `ALREADY_WINNING`    | Você já está ganhando este lote.      |
+| `LOT_NOT_STARTED`    | Este lote ainda não começou.          |
+| `LOT_ENDED`          | Este lote já foi encerrado.           |
+| `LOT_CANCELLED`      | Este lote foi cancelado.              |
 
 ### Saldo comprometido
 
 O saldo comprometido não é guardado numa coluna. Ele é a soma dos lances atuais dos lotes que o licitante lidera e que ainda não foram liquidados nem cancelados.
-
 - Quando alguém supera o lance, o líder do lote muda e o valor volta ao disponível de quem foi superado na mesma transação. Nenhum saldo precisa ser movimentado.
 - O mesmo vale para o cancelamento: cancelar o lote libera o valor reservado na hora. É assim que funciona o estorno automático.
 
@@ -182,14 +179,12 @@ Um lance aceito nos últimos 2 minutos muda o fim do lote para **2 minutos depoi
 ### Liquidação
 
 Um worker roda a cada 2 segundos dentro do próprio processo da API e procura lotes que já terminaram e ainda não foram liquidados.
-
 - **Lote com lances:** o worker verifica a cadeia de lances, debita o valor do vencedor, credita o leiloeiro e gera o comprovante.
 - **Lote sem lances:** fecha sem vencedor.
 
 ### Gestão da API externa
 
 O Scryfall só é chamado em dois momentos: na busca de cartas do painel do leiloeiro e na criação de um lote.
-
 - **Cópia do item:** ao criar o lote, a API grava uma cópia da carta no banco (título, imagem e atributos). Vitrine, sala, auditoria e comprovante leem só do banco e continuam funcionando com o Scryfall fora do ar.
 - **Cliente do Scryfall:**
   - timeout de 5 s;
@@ -201,7 +196,6 @@ O Scryfall só é chamado em dois momentos: na busca de cartas do painel do leil
 ### Tempo real
 
 A sala do lote assina um stream SSE em `/api/lots/:id/events`, com os eventos `bid`, `settled` e `cancelled`. O lance em si vai por um `POST` normal.
-
 - **Atualização da tela:** o front aplica cada evento direto no cache do TanStack Query, sem recarregar a página.
 - **Heartbeat:** a cada 20 s, para o proxy não fechar a conexão.
 - **Reconexão:** a cada reconexão, o front busca o lote de novo para recuperar o que perdeu.
@@ -222,16 +216,16 @@ head_mac = HMAC(K, ["head", lot_id, quantidade_de_lances, ultimo_mac])
 
 Toda entrada do HMAC é um array serializado com `JSON.stringify`, com ordem fixa, valores em centavos como string e datas em ISO UTC. A data do lance é gerada pela aplicação e gravada exatamente como entrou no MAC. Se ela viesse do `now()` do banco, que guarda microssegundos, o valor lido de volta seria diferente do usado no cálculo.
 
-| Adulteração no banco | Resultado na auditoria |
-| --- | --- |
-| Alterar valor, licitante ou data de um lance | Adulterado no lance #N |
-| Editar o MAC de um lance | Adulterado no lance #N |
-| Inserir um lance falso | Adulterado no lance #N |
-| Remover um lance do meio | Adulterado |
-| Trocar a ordem de dois lances | Adulterado no lance #N |
-| Remover o último lance | Lances removidos do final |
-| Alterar o lance atual ou o líder do lote | Adulterado |
-| Alterar o lance inicial ou o incremento | Adulterado desde o lance #1 |
+| Adulteração no banco                         | Resultado na auditoria      |
+| -------------------------------------------- | --------------------------- |
+| Alterar valor, licitante ou data de um lance | Adulterado no lance #N      |
+| Editar o MAC de um lance                     | Adulterado no lance #N      |
+| Inserir um lance falso                       | Adulterado no lance #N      |
+| Remover um lance do meio                     | Adulterado                  |
+| Trocar a ordem de dois lances                | Adulterado no lance #N      |
+| Remover o último lance                       | Lances removidos do final   |
+| Alterar o lance atual ou o líder do lote     | Adulterado                  |
+| Alterar o lance inicial ou o incremento      | Adulterado desde o lance #1 |
 
 A página de auditoria mostra cada lance com sua situação, o veredito geral e uma **impressão digital** da cadeia: os 16 primeiros caracteres do `head_mac`. A mesma impressão digital aparece no comprovante. Quem guardou o comprovante tem um registro, fora do banco, de como a cadeia estava no fechamento.
 
@@ -271,14 +265,13 @@ Os mesmos cenários estão cobertos nos testes automatizados da auditoria.
 
 #### Limitações
 
-- **Restauração de uma cópia antiga:** quem guardou uma cópia antiga *completa* do lote e dos lances pode restaurá-la, e a cadeia continua válida. A impressão digital no comprovante ajuda a contestar, mas não impede.
+- **Restauração de uma cópia antiga:** quem guardou uma cópia antiga _completa_ do lote e dos lances pode restaurá-la, e a cadeia continua válida. A impressão digital no comprovante ajuda a contestar, mas não impede.
 - **Vazamento da chave:** se o `AUDIT_SECRET` vazar, a proteção acaba. Não há rotação de chave.
 - **Quem verifica é o servidor:** a chave é secreta, então a verificação é feita pelo servidor e a página pública mostra o resultado. Isso protege contra adulteração direta no banco, não contra um servidor malicioso. Para que terceiros pudessem verificar sozinhos, seria preciso trocar o HMAC por assinatura digital (Ed25519). Achei que isso ia além do que o desafio pede.
 
 ### Privacidade
 
 A auditoria, o comprovante e o stream SSE nunca mostram nome ou e-mail. Cada licitante aparece como um pseudônimo, por exemplo **Licitante #a3f9c1**. Os 6 caracteres são os primeiros de `HMAC(K, ["pseudonym", lot_id, user_id])`.
-
 - O pseudônimo muda de um lote para outro, então não dá para cruzar a atividade de alguém entre lotes.
 - Quando o usuário está logado, a API informa qual é o pseudônimo dele naquele lote. É com isso que a sala mostra "você está ganhando" ou "você foi superado".
 
@@ -290,7 +283,7 @@ A auditoria, o comprovante e o stream SSE nunca mostram nome ou e-mail. Cada lic
 - **Imagens:** a cópia do item guarda a URL da imagem, não o arquivo. As imagens ficam na CDN do Scryfall (`cards.scryfall.io`), que é separada da API, mas se essa CDN cair as imagens não carregam.
 - **Uma instância só:** os eventos SSE são distribuídos em memória e o worker roda dentro do processo. O app foi feito para uma única instância. Para escalar horizontalmente, seria preciso trocar a distribuição de eventos (por exemplo, por `LISTEN/NOTIFY` do Postgres).
 - **Recarga periódica:** a sala também busca o lote de novo a cada 20 s, como garantia para quando a conexão SSE cair sem avisar. A vitrine, o painel e "Meus arremates" atualizam a cada 15 s.
-- **Rota `/estilo`:** é o guia visual do tema, usado durante o desenvolvimento. Só existe em modo de desenvolvimento; em produção, redireciona para a vitrine.
+- **Página de estilo (`/estilo`):** é o guia visual do tema, usado durante o desenvolvimento. Só existe em modo de desenvolvimento; em produção, redireciona para a vitrine.
 
 ## Estrutura
 
