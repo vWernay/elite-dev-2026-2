@@ -15,6 +15,14 @@
     "format": "biome format --write ."
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.2"
+    "@biomejs/biome": "2.6.2",
+    "lint-staged": "^17.6.0",
+    "simple-git-hooks": "^2.14.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged"
+  },
+  "lint-staged": {
+    "*": "biome check --no-errors-on-unmatched --files-ignore-unknown=true"
   }
 }
