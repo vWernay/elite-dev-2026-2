@@ -93,6 +93,8 @@ pnpm dev:api
 pnpm dev:web
 ```
 
+Se a porta 5432 já estiver ocupada por outro Postgres, defina `POSTGRES_PORT` no `.env` (por exemplo, `5433`) e use a mesma porta na `DATABASE_URL`. Para os testes, defina também `TEST_DATABASE_URL` com essa porta.
+
 Abra http://localhost:5173. Em desenvolvimento, o Vite encaminha `/api` para a API. O Swagger fica em http://localhost:3000/api/docs.
 
 ### Variáveis de ambiente
@@ -103,6 +105,7 @@ Abra http://localhost:5173. Em desenvolvimento, o Vite encaminha `/api` para a A
 | `AUDIT_SECRET`                                      | sim         | Chave da cadeia de HMAC (mínimo de 32 caracteres). Nunca é gravada no banco                     |
 | `JWT_SECRET`                                        | sim         | Chave de assinatura da sessão (mínimo de 32 caracteres)                                         |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | só local    | Usadas pelo Docker Compose                                                                      |
+| `POSTGRES_PORT`                                     | só local    | Porta do Postgres no host. Padrão: `5432`                                                       |
 | `PORT`                                              | não         | Porta da API. Padrão: `3000`                                                                    |
 | `NODE_ENV`                                          | não         | `development`, `production` ou `test`. Em `production`, o cookie de sessão passa a ser `Secure` |
 | `DATABASE_SSL`                                      | não         | `true` ou `false`. Padrão: ligado só em produção                                                |
