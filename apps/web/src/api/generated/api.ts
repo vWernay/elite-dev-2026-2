@@ -24,14 +24,6 @@ import type {
 } from '@tanstack/react-query';
 
 import { apiFetch } from '../fetcher.ts';
-export type PostApiAuthRegisterBodyRole = typeof PostApiAuthRegisterBodyRole[keyof typeof PostApiAuthRegisterBodyRole];
-
-
-export const PostApiAuthRegisterBodyRole = {
-  auctioneer: 'auctioneer',
-  bidder: 'bidder',
-} as const;
-
 export type PostApiAuthRegisterBody = {
   /**
      * @minLength 1
@@ -44,7 +36,6 @@ export type PostApiAuthRegisterBody = {
      * @maxLength 128
      */
   password: string;
-  role: PostApiAuthRegisterBodyRole;
 };
 
 export type PostApiAuthRegister201Role = typeof PostApiAuthRegister201Role[keyof typeof PostApiAuthRegister201Role];

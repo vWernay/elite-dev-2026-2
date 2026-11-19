@@ -39,19 +39,19 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
           name: z.string().trim().min(1).max(100),
           email,
           password: z.string().min(8).max(128),
-          role: z.enum(userRole.enumValues),
         }),
         response: { 201: userSchema },
       },
     },
     async (request, reply) => {
-      const { name, email, password, role } = request.body
+      // O papel nunca vem do corpo: todo cadastro público é licitante
+      const { name, email, password } = request.body
       const passwordHash = await argon2.hash(password)
 
       try {
         const [user] = await db
           .insert(users)
-          .values({ name, email, passwordHash, role })
+          .values({ name, email, passwordHash, role: "bidder" })
           .returning({
             id: users.id,
             name: users.name,

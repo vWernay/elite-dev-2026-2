@@ -29,20 +29,12 @@
                     "type": "string",
                     "minLength": 8,
                     "maxLength": 128
-                  },
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "auctioneer",
-                      "bidder"
-                    ]
                   }
                 },
                 "required": [
                   "name",
                   "email",
-                  "password",
-                  "role"
+                  "password"
                 ]
               }
             }
