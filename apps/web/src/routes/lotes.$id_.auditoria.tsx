@@ -29,7 +29,7 @@ import { Money } from "../components/Money"
 import { RouterAnchor } from "../components/RouterAnchor"
 import { bidderLabel } from "../components/room/BidHistory"
 import { StatusBadge } from "../components/StatusBadge"
-import { formatTime } from "../lib/format"
+import { formatDateTime, formatTime } from "../lib/format"
 
 // O "_" depois de $id tira esta página de dentro da sala do lote.
 export const Route = createFileRoute("/lotes/$id_/auditoria")({
@@ -42,6 +42,8 @@ const issueText: Record<GetApiLotsIdAudit200["issues"][number], string> = {
   HEAD_MISMATCH: "A ponta da cadeia de lances não confere.",
   LOT_STATE_MISMATCH:
     "O lance atual ou o líder do lote não confere com o último lance.",
+  ENDS_AT_MISMATCH:
+    "O horário de fim do lote não confere com o registrado no último lance.",
 }
 
 function Verdict({ audit }: { audit: GetApiLotsIdAudit200 }) {
@@ -126,12 +128,30 @@ function AuditPage() {
       )}
 
       <Paper p="md">
-        <Group justify="space-between" wrap="wrap" gap="xs">
-          <Text size="sm" c="dimmed">
-            Impressão digital da cadeia (igual à do comprovante)
-          </Text>
-          <Code>{a.fingerprint}</Code>
-        </Group>
+        <Stack gap="xs">
+          <Group justify="space-between" wrap="wrap" gap="xs">
+            <Text size="sm" c="dimmed">
+              Impressão digital da cadeia (igual à do comprovante)
+            </Text>
+            <Code>{a.fingerprint}</Code>
+          </Group>
+          <Group justify="space-between" wrap="wrap" gap="xs">
+            <Text size="sm" c="dimmed">
+              Fim do lote
+            </Text>
+            <Text size="sm">
+              {formatDateTime(a.endsAt)}
+              {a.endsAt !== a.originalEndsAt &&
+                ` (previsto para ${formatDateTime(a.originalEndsAt)})`}
+            </Text>
+          </Group>
+          {a.chainVersion < 2 && (
+            <Text size="xs" c="dimmed">
+              Este lote usa a cadeia antiga (v1): ela protege os lances, mas não
+              o horário de fim, o cancelamento nem a liquidação.
+            </Text>
+          )}
+        </Stack>
       </Paper>
 
       {a.bids.length === 0 ? (
@@ -159,7 +179,14 @@ function AuditPage() {
                   bg={bid.valid ? undefined : "var(--mantine-color-red-light)"}
                 >
                   <Table.Td>{bid.seq}</Table.Td>
-                  <Table.Td>{bidderLabel(bid.pseudonym)}</Table.Td>
+                  <Table.Td>
+                    {bidderLabel(bid.pseudonym)}
+                    {bid.extendedEndsAt && (
+                      <Text size="xs" c="dimmed">
+                        Prorrogou o fim para {formatTime(bid.extendedEndsAt)}
+                      </Text>
+                    )}
+                  </Table.Td>
                   <Table.Td ta="right">
                     <Money cents={bid.amountCents} />
                   </Table.Td>
@@ -193,10 +220,11 @@ function AuditPage() {
           <Text fw={600}>Como a verificação funciona</Text>
           <Text size="sm" c="dimmed">
             Cada lance recebe um código calculado com o valor, o licitante, o
-            horário e o código do lance anterior, usando uma chave que só o
-            servidor conhece. Se alguém alterar, apagar ou inserir um lance
-            direto no banco de dados, a cadeia deixa de bater e esta página
-            aponta o primeiro lance afetado.
+            horário, o novo horário de fim do lote e o código do lance anterior,
+            usando uma chave que só o servidor conhece. A ponta da cadeia também
+            amarra o fim do lote, o cancelamento e a liquidação. Se alguém
+            alterar, apagar ou inserir algo direto no banco de dados, a cadeia
+            deixa de bater e esta página aponta o primeiro lance afetado.
           </Text>
           <Text size="sm" c="dimmed">
             A impressão digital resume a cadeia inteira. Guarde a do seu

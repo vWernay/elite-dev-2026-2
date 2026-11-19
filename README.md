@@ -222,14 +222,17 @@ A sala do lote assina um stream SSE em `/api/lots/:id/events`, com os eventos `b
 Os lances de cada lote formam uma **cadeia de HMAC-SHA256**. A chave (`AUDIT_SECRET`) fica numa variável de ambiente do servidor e nunca vai para o banco. Quem tem acesso ao banco consegue mudar os dados, mas não consegue gerar MACs válidos.
 
 ```
-genesis  = HMAC(K, ["genesis", lot_id, lance_inicial, incremento, inicio])
-mac_n    = HMAC(K, ["bid", lot_id, seq, licitante, valor, data, mac_(n-1) ou genesis])
-head_mac = HMAC(K, ["head", lot_id, quantidade_de_lances, ultimo_mac])
+genesis  = HMAC(K, ["genesis", lot_id, lance_inicial, incremento, inicio, fim_original])
+mac_n    = HMAC(K, ["bid", lot_id, seq, licitante, valor, data, fim_depois_do_lance, mac_(n-1) ou genesis])
+head_mac = HMAC(K, ["head", lot_id, quantidade_de_lances, ultimo_mac, fim_atual, cancelado_em, liquidado_em])
 ```
 
-- **`genesis`** é o elo inicial. Não é gravado: é recalculado sempre que preciso. Por incluir as regras do lote, mudar o lance inicial ou o incremento depois dos lances também quebra a cadeia.
-- **`mac_n`** é gravado em cada lance e encadeia o lance no anterior.
-- **`head_mac`** é gravado no lote e marca a ponta da cadeia. Sem ele, apagar o último lance passaria despercebido, porque nada depois dele quebraria.
+- **`genesis`** é o elo inicial. Não é gravado: é recalculado sempre que preciso. Por incluir as regras do lote, mudar o lance inicial, o incremento ou o fim original depois dos lances também quebra a cadeia.
+- **`mac_n`** é gravado em cada lance e encadeia o lance no anterior. Cada lance também grava (`bids.ends_at_after`) o horário de fim que resultou dele, então cada prorrogação do anti-sniping é um fato assinado.
+- **`head_mac`** é gravado no lote e marca a ponta da cadeia. Sem ele, apagar o último lance passaria despercebido, porque nada depois dele quebraria. Ele também amarra o estado do lote (`ends_at`, `cancelled_at`, `settled_at`): o cancelamento e a liquidação recalculam o `head_mac` na mesma transação.
+- A auditoria ainda confere `lots.ends_at` com o `ends_at_after` do último lance (ou com `original_ends_at`, se não há lances).
+
+**Versões da cadeia.** A fórmula acima é a **v2**. Os lotes criados antes dela têm `lots.chain_version = 1` e continuam sendo verificados e recebendo lances com as fórmulas antigas, que não incluem os campos novos (a migration não recalcula nada, porque isso exigiria a chave). Lotes novos nascem na v2. A página de auditoria avisa quando o lote é v1.
 
 Toda entrada do HMAC é um array serializado com `JSON.stringify`, com ordem fixa, valores em centavos como string e datas em ISO UTC. A data do lance é gerada pela aplicação e gravada exatamente como entrou no MAC. Se ela viesse do `now()` do banco, que guarda microssegundos, o valor lido de volta seria diferente do usado no cálculo.
 
@@ -243,6 +246,11 @@ Toda entrada do HMAC é um array serializado com `JSON.stringify`, com ordem fix
 | Remover o último lance                       | Lances removidos do final   |
 | Alterar o lance atual ou o líder do lote     | Adulterado                  |
 | Alterar o lance inicial ou o incremento      | Adulterado desde o lance #1 |
+| Alterar o fim original (`original_ends_at`)  | Adulterado desde o lance #1 |
+| Alterar o fim atual (`ends_at`) _(v2)_       | Adulterado                  |
+| Alterar o fim gravado em um lance _(v2)_     | Adulterado no lance #N      |
+| Apagar ou criar `cancelled_at` _(v2)_        | Adulterado                  |
+| Apagar ou criar `settled_at` _(v2)_          | Adulterado                  |
 
 A página de auditoria mostra cada lance com sua situação, o veredito geral e uma **impressão digital** da cadeia: os 16 primeiros caracteres do `head_mac`. A mesma impressão digital aparece no comprovante. Quem guardou o comprovante tem um registro, fora do banco, de como a cadeia estava no fechamento.
 
@@ -278,13 +286,52 @@ UPDATE bids SET seq = 1  WHERE lot_id = '5eed0000-0000-4000-8000-000000000001' A
 UPDATE bids SET seq = 2  WHERE lot_id = '5eed0000-0000-4000-8000-000000000001' AND seq = 99;
 ```
 
+Os casos da v2 (o Lightning Bolt é `5eed0000-0000-4000-8000-000000000002` e a Serra Angel, `5eed0000-0000-4000-8000-000000000005`):
+
+```sql
+-- Mudar o horário de fim do lote -> "Adulterado" (a ponta da cadeia e o fim do lote não conferem)
+UPDATE lots SET ends_at = ends_at + interval '1 day'
+WHERE id = '5eed0000-0000-4000-8000-000000000001';
+
+-- Mudar o fim original -> "Adulterado no lance #1"
+UPDATE lots SET original_ends_at = original_ends_at + interval '1 day'
+WHERE id = '5eed0000-0000-4000-8000-000000000001';
+
+-- Marcar um lote ao vivo como cancelado, sem passar pela API -> "Adulterado"
+UPDATE lots SET cancelled_at = now()
+WHERE id = '5eed0000-0000-4000-8000-000000000002';
+
+-- Apagar a liquidação do lote encerrado -> "Adulterado"
+UPDATE lots SET settled_at = NULL
+WHERE id = '5eed0000-0000-4000-8000-000000000005';
+```
+
+Para testar o inverso de um cancelamento, cancele um lote pelo painel (como `leiloeiro@demo.com`) e rode `UPDATE lots SET cancelled_at = NULL WHERE id = '<id do lote>'`: a auditoria passa a mostrar "Adulterado".
+
 Os mesmos cenários estão cobertos nos testes automatizados da auditoria.
 
-#### Limitações
+#### O que a auditoria cobre e o que não cobre
 
-- **Restauração de uma cópia antiga:** quem guardou uma cópia antiga _completa_ do lote e dos lances pode restaurá-la, e a cadeia continua válida. A impressão digital no comprovante ajuda a contestar, mas não impede.
-- **Vazamento da chave:** se o `AUDIT_SECRET` vazar, a proteção acaba. Não há rotação de chave.
+Coberto:
+- Valor, licitante, horário e ordem de cada lance, e a remoção ou inserção de lances (todas as versões).
+- Lance atual e líder do lote (conferidos contra o último lance), lance inicial, incremento e início do lote.
+- Fim original, fim atual e cada prorrogação, cancelamento (`cancelled_at`) e liquidação (`settled_at`): **só nos lotes v2**.
+- Comprovante: o vencedor, o valor e a impressão digital são conferidos contra o último lance e a ponta da cadeia.
+
+Não coberto:
+- Fim do lote, cancelamento e liquidação nos lotes **v1**.
+- A linha do comprovante em si (ela é conferida contra a cadeia, mas não é assinada).
+- Título, imagem, atributos e leiloeiro do lote.
+- Saldos das carteiras.
+
+Limitações:
+- **Restauração de uma cópia antiga:** quem guardou uma cópia antiga _completa_ do lote e dos lances pode restaurá-la, e a cadeia continua válida. A impressão digital no comprovante ajuda a contestar, mas não impede. A ancoragem externa das impressões digitais, que mitigaria isso, não foi feita.
+- **Vazamento da chave:** se o `AUDIT_SECRET` vazar, a proteção acaba. Não há rotação de chave. Quem tem o banco **e** a chave pode refazer a cadeia inteira.
 - **Quem verifica é o servidor:** a chave é secreta, então a verificação é feita pelo servidor e a página pública mostra o resultado. Isso protege contra adulteração direta no banco, não contra um servidor malicioso. Para que terceiros pudessem verificar sozinhos, seria preciso trocar o HMAC por assinatura digital (Ed25519). Achei que isso ia além do que o desafio pede.
+- **Verificação sob demanda:** a cadeia é conferida quando alguém abre a auditoria e quando um lote com lances vai ser liquidado. Uma adulteração só é percebida nesses momentos. Um lote sem lances é liquidado como "não vendido" sem verificação.
+- **Lotes v1:** os criados antes da v2 mantêm a proteção antiga. Não dá para migrá-los sem a chave e sem confiar no estado atual do banco, então ficam como estão.
+
+As decisões desta cadeia estão em [`docs/adr/0006-cadeia-v2-versionada.md`](docs/adr/0006-cadeia-v2-versionada.md).
 
 ### Privacidade
 

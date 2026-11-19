@@ -77,6 +77,9 @@ export const lots = pgTable(
     leaderId: uuid("leader_id").references(() => users.id),
     bidCount: integer("bid_count").notNull().default(0),
     headMac: text("head_mac").notNull(),
+    // Versão da fórmula da cadeia. 1 = lotes anteriores à v2 (padrão do banco);
+    // a aplicação grava 2 nos lotes novos
+    chainVersion: integer("chain_version").notNull().default(1),
     cancelledAt: timestamptz("cancelled_at"),
     settledAt: timestamptz("settled_at"),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
@@ -106,6 +109,8 @@ export const bids = pgTable(
     seq: integer("seq").notNull(),
     amountCents: cents("amount_cents").notNull(),
     createdAt: timestamptz("created_at").notNull(),
+    // fim do lote depois deste lance (cadeia v2); nulo nos lotes v1
+    endsAtAfter: timestamptz("ends_at_after"),
     mac: text("mac").notNull(),
   },
   (t) => [unique("bids_lot_seq_unique").on(t.lotId, t.seq)],

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { sql } from "drizzle-orm"
+import { CURRENT_CHAIN_VERSION } from "../audit/chain.js"
 import { chain } from "../audit/index.js"
 import { db } from "../db/client.js"
 import { lots, users } from "../db/schema.js"
@@ -57,11 +58,14 @@ export async function createLot(
       startsAt,
       endsAt,
       originalEndsAt: endsAt,
+      chainVersion: CURRENT_CHAIN_VERSION,
       headMac: chain.initialHeadMac({
         id,
         startingBidCents,
         minIncrementCents,
         startsAt,
+        originalEndsAt: endsAt,
+        chainVersion: overrides.chainVersion ?? CURRENT_CHAIN_VERSION,
       }),
       ...overrides,
     })

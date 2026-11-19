@@ -11,7 +11,9 @@ import {
   or,
   sql,
 } from "drizzle-orm"
+import { CURRENT_CHAIN_VERSION } from "../audit/chain.js"
 import { chain } from "../audit/index.js"
+import { lastMac } from "../audit/last-mac.js"
 import { minimumBidCents } from "../bids/rules.js"
 import { scryfall } from "../cards/scryfall.js"
 import { db } from "../db/client.js"
@@ -96,11 +98,14 @@ export async function createLot(input: CreateLotInput, now = new Date()) {
       startsAt,
       endsAt,
       originalEndsAt: endsAt,
+      chainVersion: CURRENT_CHAIN_VERSION,
       headMac: chain.initialHeadMac({
         id,
         startingBidCents: input.startingBidCents,
         minIncrementCents: input.minIncrementCents,
         startsAt,
+        originalEndsAt: endsAt,
+        chainVersion: CURRENT_CHAIN_VERSION,
       }),
     })
     .returning()
@@ -247,9 +252,15 @@ export async function cancelLot(
       )
     }
 
+    // O cancelamento entra na cadeia: apagar cancelled_at depois seria detectado
+    const headMac = chain.headMac(
+      { ...lot, cancelledAt: now },
+      lot.bidCount,
+      await lastMac(tx, lot),
+    )
     const [updated] = await tx
       .update(lots)
-      .set({ cancelledAt: now })
+      .set({ cancelledAt: now, headMac })
       .where(eq(lots.id, lotId))
       .returning()
     cancelledNow = true
