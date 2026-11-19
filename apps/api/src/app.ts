@@ -1,4 +1,5 @@
 import fastifyCookie from "@fastify/cookie"
+import fastifyHelmet from "@fastify/helmet"
 import fastifyJwt from "@fastify/jwt"
 import fastifyStatic from "@fastify/static"
 import fastifySwagger from "@fastify/swagger"
@@ -38,6 +39,28 @@ export function buildApp(options: AppOptions = {}) {
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
 
+  app.register(fastifyHelmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        // o Mantine injeta estilos em linha
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "https://cards.scryfall.io", "data:"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        upgradeInsecureRequests: env.NODE_ENV === "production" ? [] : null,
+      },
+    },
+    // HSTS só em produção: em localhost o navegador não deve fixar HTTPS
+    strictTransportSecurity:
+      env.NODE_ENV === "production"
+        ? { maxAge: 15_552_000, includeSubDomains: true }
+        : false,
+  })
   app.register(fastifyCookie)
   app.register(fastifyJwt, {
     secret: env.JWT_SECRET,
@@ -48,7 +71,20 @@ export function buildApp(options: AppOptions = {}) {
     openapi: { info: { title: "Mesa de Lances API", version: "1.0.0" } },
     transform: jsonSchemaTransform,
   })
-  app.register(fastifySwaggerUi, { routePrefix: "/api/docs" })
+  // A UI do Swagger usa script e estilo em linha, então tem CSP própria
+  app.register(fastifySwaggerUi, {
+    routePrefix: "/api/docs",
+    staticCSP: true,
+    // o bundle do Swagger aplica estilo em linha por script
+    transformStaticCSP: (header) => {
+      const csp = header.replace(
+        "style-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+      )
+      if (env.NODE_ENV === "production") return csp
+      return csp.replace(/;?\s*upgrade-insecure-requests;?/, "")
+    },
+  })
 
   app.setErrorHandler((err: FastifyError, request, reply) => {
     if (err instanceof AppError) {
