@@ -1,6 +1,7 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { requireRole } from "../auth/guards.js"
+import { limitBy } from "../rate-limit.js"
 import { placeBid } from "./service.js"
 
 const placedBidSchema = z.object({
@@ -20,10 +21,18 @@ const placedBidSchema = z.object({
 })
 
 export const bidRoutes: FastifyPluginAsyncZod = async (app) => {
+  // Por usuário: roda depois do login, então request.user já existe
+  const bidLimit = limitBy(app, {
+    name: "bid-user",
+    max: 30,
+    windowMs: 60_000,
+    key: (request) => request.user.sub,
+  })
+
   app.post(
     "/:id/bids",
     {
-      preHandler: requireRole("bidder"),
+      preHandler: [requireRole("bidder"), bidLimit],
       schema: {
         params: z.object({ id: z.uuid() }),
         body: z.object({ amountCents: z.number().int().positive() }),
