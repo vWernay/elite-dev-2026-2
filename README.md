@@ -144,8 +144,10 @@ O app roda no Heroku com a stack `container`:
 
 ```bash
 git push heroku main                                 # publicar
-heroku run "node dist/seed.js" -a leilao-verzel      # dados de demonstração
+heroku run "SEED_ALLOW_PRODUCTION=1 node dist/seed.js" -a leilao-verzel   # dados de demonstração
 ```
+
+Em produção o seed recusa rodar sem `SEED_ALLOW_PRODUCTION=1`, porque as contas de demonstração têm senha conhecida.
 
 ## Como funciona
 
