@@ -1,12 +1,4 @@
-import {
-  Alert,
-  Button,
-  PasswordInput,
-  SegmentedControl,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core"
+import { Alert, Button, PasswordInput, Stack, TextInput } from "@mantine/core"
 import { useForm } from "@mantine/form"
 import { IconAlertCircle } from "@tabler/icons-react"
 import { useQueryClient } from "@tanstack/react-query"
@@ -31,13 +23,7 @@ const schema = z.object({
     .string()
     .min(8, "A senha precisa ter pelo menos 8 caracteres")
     .max(128, "Máximo de 128 caracteres"),
-  role: z.enum(["bidder", "auctioneer"]),
 })
-
-const roleHelp = {
-  bidder: "Deposita saldo, acompanha os lotes ao vivo e dá lances.",
-  auctioneer: "Cria lotes a partir de cartas e acompanha os resultados.",
-} as const
 
 export const Route = createFileRoute("/cadastro")({
   validateSearch: z.object({
@@ -60,7 +46,6 @@ function RegisterPage() {
       name: "",
       email: "",
       password: "",
-      role: "bidder" as "bidder" | "auctioneer",
     },
     validate: zod4Resolver(schema),
   })
@@ -81,7 +66,7 @@ function RegisterPage() {
 
   return (
     <AuthCard
-      title="Criar conta"
+      title="Criar conta de licitante"
       subtitle={
         <>
           Já tem conta?{" "}
@@ -98,22 +83,6 @@ function RegisterPage() {
               {formError}
             </Alert>
           )}
-          <div>
-            <Text size="sm" fw={500} mb={4}>
-              Como você vai usar a Mesa de Lances?
-            </Text>
-            <SegmentedControl
-              fullWidth
-              data={[
-                { value: "bidder", label: "Licitante" },
-                { value: "auctioneer", label: "Leiloeiro" },
-              ]}
-              {...form.getInputProps("role")}
-            />
-            <Text size="xs" c="dimmed" mt={6}>
-              {roleHelp[form.values.role]}
-            </Text>
-          </div>
           <TextInput
             label="Nome"
             autoComplete="name"
