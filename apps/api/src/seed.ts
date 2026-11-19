@@ -241,6 +241,15 @@ async function createLot(seed: Seed, auctioneerId: string, now: Date) {
   })
 }
 
+// As contas de demonstração têm senha conhecida, então não rodam em produção sem aviso
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.SEED_ALLOW_PRODUCTION
+) {
+  console.error("seed recusado em produção. Defina SEED_ALLOW_PRODUCTION=1.")
+  process.exit(1)
+}
+
 try {
   const ids = await upsertAccounts()
   await removeOldLots()
@@ -269,7 +278,7 @@ try {
 
   console.log(`seed ok: ${lotSeeds.length} lotes, ${accounts.length} contas`)
   for (const account of accounts) {
-    console.log(`  ${account.role.padEnd(10)} ${account.email} / ${PASSWORD}`)
+    console.log(`  ${account.role.padEnd(10)} ${account.email}`)
   }
 } finally {
   await pool.end()
