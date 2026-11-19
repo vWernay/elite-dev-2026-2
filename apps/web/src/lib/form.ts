@@ -8,10 +8,6 @@ export function applyApiError(
   if (!(error instanceof ApiError)) {
     return "Não foi possível falar com o servidor. Tente novamente."
   }
-  if (error.code === "EMAIL_TAKEN") {
-    setFieldError("email", error.message)
-    return null
-  }
   if (error.code === "VALIDATION_ERROR") {
     const issues = (error.details?.issues ?? []) as { path: string }[]
     for (const issue of issues) {
