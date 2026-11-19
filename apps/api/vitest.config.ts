@@ -11,7 +11,6 @@ export default defineConfig({
     env: {
       DATABASE_URL: TEST_DATABASE_URL,
       AUDIT_SECRET: TEST_SECRET,
-      JWT_SECRET: TEST_SECRET,
       NODE_ENV: "test",
     },
   },

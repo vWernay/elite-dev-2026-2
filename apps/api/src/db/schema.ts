@@ -42,6 +42,21 @@ export const users = pgTable(
   (t) => [check("users_balance_non_negative", sql`${t.balanceCents} >= 0`)],
 )
 
+export const sessions = pgTable(
+  "sessions",
+  {
+    // hash SHA-256 do token que vai no cookie
+    id: text("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+    expiresAt: timestamptz("expires_at").notNull(),
+    revokedAt: timestamptz("revoked_at"),
+  },
+  (t) => [index("sessions_user_idx").on(t.userId)],
+)
+
 export const lots = pgTable(
   "lots",
   {
