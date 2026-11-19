@@ -292,6 +292,40 @@ A auditoria, o comprovante e o stream SSE nunca mostram nome ou e-mail. Cada lic
 - O pseudônimo muda de um lote para outro, então não dá para cruzar a atividade de alguém entre lotes.
 - Quando o usuário está logado, a API informa qual é o pseudônimo dele naquele lote. É com isso que a sala mostra "você está ganhando" ou "você foi superado".
 
+### Segurança
+
+- **Sessão:** cookie `httpOnly`, `SameSite=Lax` (e `Secure` com prefixo `__Host-` em produção) com um token aleatório. O servidor guarda só o hash do token; o logout revoga a sessão e o mesmo cookie passa a receber 401. O papel vem sempre do banco.
+- **Papéis:** o cadastro público só cria licitantes e ignora um `role` enviado no corpo. Leiloeiros são criados por script (abaixo).
+- **Limite de tentativas:** login (5 por minuto por IP e e-mail, 20 por IP), cadastro (5 por IP), lances (30 por usuário) e 300 requisições por minuto por IP no geral. Excesso recebe `429` com `RATE_LIMITED` e `Retry-After`, e as telas de entrar e cadastrar mostram a mensagem.
+- **E-mail no cadastro:** a resposta para e-mail já usado é genérica e o hash da senha roda nos dois casos.
+- **Headers:** CSP, `nosniff`, `X-Frame-Options`, `Referrer-Policy` e, só em produção, HSTS.
+- **Origem:** `POST`, `PUT`, `PATCH` e `DELETE` com `Origin` de outro site recebem 403.
+- **Logs:** o seed não imprime senha e recusa rodar em produção sem `SEED_ALLOW_PRODUCTION=1`. O log padrão do Fastify não registra corpo nem cookies.
+
+Criar um leiloeiro (a senha vem de `NEW_USER_PASSWORD` ou é pedida sem aparecer na tela):
+
+```bash
+pnpm --filter api user:create --role auctioneer --email leiloeiro@exemplo.com --name "Nome do leiloeiro"
+```
+
+#### O que a segurança cobre e o que não cobre
+
+| Garantia                         | Cobre                                                            | Não cobre                                                                                                                                                                                                             |
+| -------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logout revoga a sessão           | O cookie que fez logout recebe 401 em seguida                    | Não há "sair de todos os dispositivos" nem troca de senha. Sessões vencidas só são apagadas no próximo login do dono                                                                                                  |
+| Cadastro não revela e-mail       | Mensagem sem citar o e-mail, tempo parecido e limite por IP      | Quem cadastra um e-mail livre ainda vê o cadastro dar certo, então a enumeração continua possível (sem verificação por e-mail)                                                                                        |
+| Limite de tentativas             | Login, cadastro, lances e geral, antes do hash da senha          | O contador fica na memória do processo (reinicia com o app, não vale entre instâncias). Quem divide um IP divide o limite. A regra de IP supõe só o roteador do Heroku na frente, o que não foi conferido em produção |
+| CSP                              | Scripts só da própria origem; imagens só da origem e da Scryfall | Estilos em linha são permitidos (o Mantine precisa). Conferida sem erro de console na vitrine, sala, auditoria, entrar, carteira, arremates e painel; o formulário de novo lote não foi aberto nessa conferência      |
+| Checagem de `Origin`             | Requisições de navegador vindas de outro site                    | Requisições sem o header `Origin` (curl, outros clientes) passam                                                                                                                                                      |
+| Papel de leiloeiro só por script | Ninguém vira leiloeiro pela API pública                          | Não há tela de administração; quem acessa o banco ou o script é, na prática, administrador                                                                                                                            |
+
+As decisões e os motivos estão em [`docs/adr`](docs/adr):
+- [0001 Sessões no servidor em vez de JWT](docs/adr/0001-sessoes-no-servidor.md)
+- [0002 O papel não vem do corpo do cadastro](docs/adr/0002-papel-fora-do-cadastro.md)
+- [0003 Cadastro sem revelar se o e-mail existe](docs/adr/0003-cadastro-e-enumeracao-de-emails.md)
+- [0004 Limites de tentativas e IP do cliente](docs/adr/0004-limites-de-tentativas-e-ip-do-cliente.md)
+- [0005 Headers de segurança e checagem de origem](docs/adr/0005-headers-de-seguranca-e-origem.md)
+
 ## Comportamentos que vale conhecer
 
 - **Comprovante e saldo após o fim do lote:** o lote aparece como encerrado no segundo exato em que termina, mas o comprovante e a movimentação de saldo aparecem até uns 2 segundos depois, no próximo ciclo do worker.
