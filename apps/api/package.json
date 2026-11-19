@@ -13,6 +13,7 @@
     "openapi:export": "tsx --env-file=../../.env src/openapi.ts ../web/openapi.json",
     "migrate": "node dist/db/migrate.js",
     "seed": "node --env-file=../../.env --import tsx src/seed.ts",
+    "ledger:check": "node --env-file=../../.env --import tsx src/scripts/ledger-check.ts",
     "db:bench": "node --env-file=../../.env --import tsx src/scripts/bench.ts",
     "user:create": "node --env-file=../../.env --import tsx src/scripts/create-user.ts"
   },

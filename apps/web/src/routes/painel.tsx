@@ -9,6 +9,7 @@ import {
 import { MyLots } from "../components/auctioneer/MyLots"
 import { NewLotForm } from "../components/auctioneer/NewLotForm"
 import { PageHeader } from "../components/PageHeader"
+import { Ledger } from "../components/wallet/Ledger"
 
 export const Route = createFileRoute("/painel")({
   beforeLoad: requireRole("auctioneer"),
@@ -41,6 +42,11 @@ function AuctioneerPanel() {
       <Stack gap="sm">
         <Title order={3}>Meus lotes</Title>
         <MyLots />
+      </Stack>
+
+      <Stack gap="sm">
+        <Title order={3}>Extrato</Title>
+        <Ledger />
       </Stack>
     </Stack>
   )

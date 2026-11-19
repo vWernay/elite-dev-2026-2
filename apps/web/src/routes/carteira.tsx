@@ -6,6 +6,7 @@ import {
   Paper,
   Skeleton,
   Stack,
+  Tabs,
   Text,
   Title,
 } from "@mantine/core"
@@ -16,6 +17,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { ApiError } from "../api/fetcher"
 import {
+  getGetApiWalletEntriesQueryKey,
   getGetApiWalletQueryKey,
   useGetApiWallet,
   usePostApiWalletDeposits,
@@ -24,6 +26,7 @@ import { requireRole } from "../auth/session"
 import { ErrorState } from "../components/ErrorState"
 import { Money } from "../components/Money"
 import { PageHeader } from "../components/PageHeader"
+import { Ledger } from "../components/wallet/Ledger"
 import { formatCents } from "../lib/format"
 
 export const Route = createFileRoute("/carteira")({
@@ -82,6 +85,9 @@ function DepositForm() {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetApiWalletQueryKey() })
+          queryClient.invalidateQueries({
+            queryKey: getGetApiWalletEntriesQueryKey(),
+          })
           notifications.show({
             color: "green",
             title: "Depósito realizado",
@@ -162,32 +168,50 @@ function WalletPage() {
         description="Seu saldo para dar lances. Os valores são simulados."
       />
 
-      {wallet.isPending ? (
-        <Skeleton h={130} />
-      ) : wallet.isError ? (
-        <ErrorState error={wallet.error} onRetry={() => wallet.refetch()} />
-      ) : (
-        <Group grow align="stretch">
-          <Balance
-            label="Saldo total"
-            hint="Tudo o que você depositou, menos o que já pagou."
-            cents={wallet.data.data.balanceCents}
-          />
-          <Balance
-            label="Comprometido"
-            hint="Soma dos lances em que você está ganhando agora."
-            cents={wallet.data.data.committedCents}
-          />
-          <Balance
-            label="Disponível"
-            hint="O que ainda pode usar em novos lances."
-            cents={wallet.data.data.availableCents}
-            strong
-          />
-        </Group>
-      )}
+      <Tabs defaultValue="saldo" keepMounted={false}>
+        <Tabs.List mb="lg">
+          <Tabs.Tab value="saldo">Saldo</Tabs.Tab>
+          <Tabs.Tab value="extrato">Extrato</Tabs.Tab>
+        </Tabs.List>
 
-      <DepositForm />
+        <Tabs.Panel value="saldo">
+          <Stack gap="lg">
+            {wallet.isPending ? (
+              <Skeleton h={130} />
+            ) : wallet.isError ? (
+              <ErrorState
+                error={wallet.error}
+                onRetry={() => wallet.refetch()}
+              />
+            ) : (
+              <Group grow align="stretch">
+                <Balance
+                  label="Saldo total"
+                  hint="Tudo o que você depositou, menos o que já pagou."
+                  cents={wallet.data.data.balanceCents}
+                />
+                <Balance
+                  label="Comprometido"
+                  hint="Soma dos lances em que você está ganhando agora."
+                  cents={wallet.data.data.committedCents}
+                />
+                <Balance
+                  label="Disponível"
+                  hint="O que ainda pode usar em novos lances."
+                  cents={wallet.data.data.availableCents}
+                  strong
+                />
+              </Group>
+            )}
+
+            <DepositForm />
+          </Stack>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="extrato">
+          <Ledger />
+        </Tabs.Panel>
+      </Tabs>
     </Stack>
   )
 }
