@@ -62,7 +62,7 @@ Opcionais:
 - **Testes:** Vitest, rodando contra um Postgres real.
 - **Lint e formatação:** Biome.
 
-Em produção, a API também serve o build do front. Front e API ficam na mesma origem, então não há CORS, e a sessão é um cookie `httpOnly`.
+Em produção, a API também serve o build do front. Front e API ficam na mesma origem, então não há CORS, e a sessão é um cookie `httpOnly` com um token opaco; o servidor guarda só o hash dele e o logout o revoga.
 
 ## Como rodar localmente
 
@@ -80,7 +80,7 @@ pnpm install
 
 # 2. Variáveis de ambiente
 cp .env.example .env
-# Preencha AUDIT_SECRET e JWT_SECRET com valores diferentes. Dica: para gerar cada um:
+# Preencha AUDIT_SECRET. Dica: para gerar o valor:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # 3. Banco de dados
@@ -105,7 +105,6 @@ Abra http://localhost:5173. Em desenvolvimento, o Vite encaminha `/api` para a A
 | --------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                                      | sim         | URL de conexão do Postgres                                                                      |
 | `AUDIT_SECRET`                                      | sim         | Chave da cadeia de HMAC (mínimo de 32 caracteres). Nunca é gravada no banco                     |
-| `JWT_SECRET`                                        | sim         | Chave de assinatura da sessão (mínimo de 32 caracteres)                                         |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | só local    | Usadas pelo Docker Compose                                                                      |
 | `POSTGRES_PORT`                                     | só local    | Porta do Postgres no host. Padrão: `5432`                                                       |
 | `PORT`                                              | não         | Porta da API. Padrão: `3000`                                                                    |

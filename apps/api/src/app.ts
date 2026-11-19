@@ -1,6 +1,5 @@
 import fastifyCookie from "@fastify/cookie"
 import fastifyHelmet from "@fastify/helmet"
-import fastifyJwt from "@fastify/jwt"
 import fastifyStatic from "@fastify/static"
 import fastifySwagger from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
@@ -62,10 +61,8 @@ export function buildApp(options: AppOptions = {}) {
         : false,
   })
   app.register(fastifyCookie)
-  app.register(fastifyJwt, {
-    secret: env.JWT_SECRET,
-    cookie: { cookieName: "token", signed: false },
-  })
+  // preenchido pelo authenticate
+  app.decorateRequest("user", null as never)
 
   app.register(fastifySwagger, {
     openapi: { info: { title: "Mesa de Lances API", version: "1.0.0" } },

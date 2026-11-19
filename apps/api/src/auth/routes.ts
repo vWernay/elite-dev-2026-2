@@ -1,16 +1,17 @@
 import argon2 from "argon2"
 import { eq } from "drizzle-orm"
-import type { FastifyReply } from "fastify"
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { db } from "../db/client.js"
 import { userRole, users } from "../db/schema.js"
-import { env } from "../env.js"
 import { AppError } from "../errors.js"
 import { authenticate } from "./guards.js"
-
-const COOKIE_NAME = "token"
-const SESSION_SECONDS = 7 * 24 * 60 * 60
+import {
+  endSessionCookie,
+  revokeSession,
+  SESSION_COOKIE,
+  startSession,
+} from "./sessions.js"
 
 // Usado para gastar o mesmo tempo de verificação quando o e-mail não existe.
 const dummyHash = await argon2.hash("dummy-password")
@@ -23,23 +24,6 @@ const userSchema = z.object({
   email: z.string(),
   role: z.enum(userRole.enumValues),
 })
-
-function startSession(
-  reply: FastifyReply,
-  user: { id: string; role: (typeof userRole.enumValues)[number] },
-) {
-  const token = reply.server.jwt.sign(
-    { sub: user.id, role: user.role },
-    { expiresIn: SESSION_SECONDS },
-  )
-  reply.setCookie(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.NODE_ENV === "production",
-    path: "/",
-    maxAge: SESSION_SECONDS,
-  })
-}
 
 function isUniqueViolation(err: unknown): boolean {
   const e = err as { code?: string; cause?: { code?: string } }
@@ -74,7 +58,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
             email: users.email,
             role: users.role,
           })
-        startSession(reply, user)
+        await startSession(reply, user.id)
         return reply.code(201).send(user)
       } catch (err) {
         if (isUniqueViolation(err)) {
@@ -113,7 +97,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         )
       }
 
-      startSession(reply, user)
+      await startSession(reply, user.id)
       return {
         id: user.id,
         name: user.name,
@@ -123,8 +107,11 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
     },
   )
 
-  app.post("/logout", { preHandler: authenticate }, async (_request, reply) => {
-    reply.clearCookie(COOKIE_NAME, { path: "/" })
+  // Sem login também responde 204: sair duas vezes não é erro
+  app.post("/logout", async (request, reply) => {
+    const token = request.cookies[SESSION_COOKIE]
+    if (token) await revokeSession(token)
+    endSessionCookie(reply)
     return reply.code(204).send()
   })
 
