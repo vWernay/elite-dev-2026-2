@@ -121,6 +121,7 @@ pnpm lint                       # Biome
 pnpm typecheck                  # tsc na API e no front
 pnpm build                      # build da API e do front
 pnpm --filter api seed          # recria os dados de demonstração
+pnpm --filter api db:bench      # banco com volume (leilao_bench) e o EXPLAIN das listagens; ver docs/adr/0007
 
 # Depois de mudar uma rota da API, para atualizar o cliente do front:
 pnpm --filter api openapi:export

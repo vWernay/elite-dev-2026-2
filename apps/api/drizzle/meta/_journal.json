@@ -22,6 +22,13 @@
       "when": 1795127076231,
       "tag": "0002_chain_v2",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795127999195,
+      "tag": "0003_indexes_trgm",
+      "breakpoints": true
     }
   ]
 }
