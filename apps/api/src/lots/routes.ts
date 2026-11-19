@@ -95,14 +95,21 @@ export const auctioneerRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       preHandler: requireRole("auctioneer"),
       schema: {
+        querystring: z.object({
+          limit: z.coerce.number().int().min(1).max(100).default(20),
+          offset: z.coerce.number().int().min(0).default(0),
+        }),
         response: {
           200: z.object({
             lots: z.array(auctioneerLotSchema),
+            total: z.number(),
+            // contagens e total recebido valem para todos os lotes, não só para a página
+            counts: z.object({ open: z.number(), sold: z.number() }),
             totalReceivedCents: z.number(),
           }),
         },
       },
     },
-    async (request) => listAuctioneerLots(request.user.sub),
+    async (request) => listAuctioneerLots(request.user.sub, request.query),
   )
 }

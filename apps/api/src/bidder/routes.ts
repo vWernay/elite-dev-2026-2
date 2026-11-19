@@ -1,11 +1,8 @@
-import { desc, eq, inArray, max } from "drizzle-orm"
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { requireRole } from "../auth/guards.js"
-import { db } from "../db/client.js"
-import { bids, lots, receipts } from "../db/schema.js"
 import { lotSummarySchema } from "../lots/schemas.js"
-import { toSummary } from "../lots/service.js"
+import { listBidderLots } from "./service.js"
 
 const stateSchema = z.enum(["leading", "outbid", "won", "lost", "cancelled"])
 
@@ -16,53 +13,31 @@ const bidderLotSchema = lotSummarySchema.extend({
 })
 
 export const bidderRoutes: FastifyPluginAsyncZod = async (app) => {
-  // Lotes em que o usuário deu lance; o comprovante só existe para quem venceu
   app.get(
     "/lots",
     {
       preHandler: requireRole("bidder"),
       schema: {
-        response: { 200: z.object({ lots: z.array(bidderLotSchema) }) },
+        querystring: z.object({
+          filter: z.enum(["all", "ongoing", "won", "lost"]).default("all"),
+          limit: z.coerce.number().int().min(1).max(100).default(20),
+          offset: z.coerce.number().int().min(0).default(0),
+        }),
+        response: {
+          200: z.object({
+            lots: z.array(bidderLotSchema),
+            // total do filtro escolhido; counts vale para todos os lotes do usuário
+            total: z.number(),
+            counts: z.object({
+              all: z.number(),
+              ongoing: z.number(),
+              won: z.number(),
+              lost: z.number(),
+            }),
+          }),
+        },
       },
     },
-    async (request) => {
-      const userId = request.user.sub
-      const mine = await db
-        .select({ lotId: bids.lotId, best: max(bids.amountCents) })
-        .from(bids)
-        .where(eq(bids.bidderId, userId))
-        .groupBy(bids.lotId)
-      if (mine.length === 0) return { lots: [] }
-
-      const best = new Map(mine.map((row) => [row.lotId, row.best ?? 0]))
-      const rows = await db
-        .select({ lot: lots, receipt: receipts })
-        .from(lots)
-        .leftJoin(receipts, eq(receipts.lotId, lots.id))
-        .where(inArray(lots.id, [...best.keys()]))
-        .orderBy(desc(lots.endsAt))
-
-      const now = new Date()
-      return {
-        lots: rows.map(({ lot, receipt }) => {
-          const leading = lot.leaderId === userId
-          const state = lot.cancelledAt
-            ? "cancelled"
-            : receipt
-              ? receipt.winnerId === userId
-                ? "won"
-                : "lost"
-              : leading
-                ? "leading"
-                : "outbid"
-          return {
-            ...toSummary(lot, now),
-            state,
-            myHighestBidCents: best.get(lot.id) ?? 0,
-            receiptId: state === "won" ? (receipt?.id ?? null) : null,
-          } as const
-        }),
-      }
-    },
+    async (request) => listBidderLots(request.user.sub, request.query),
   )
 }

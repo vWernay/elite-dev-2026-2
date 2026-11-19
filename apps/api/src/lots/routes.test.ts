@@ -722,7 +722,102 @@ describe("GET /api/auctioneer/lots", () => {
     const { cookies } = await signUp("auctioneer")
     expect((await listMine(cookies)).json()).toEqual({
       lots: [],
+      total: 0,
+      counts: { open: 0, sold: 0 },
       totalReceivedCents: 0,
+    })
+  })
+
+  describe("paginação", () => {
+    const page = (cookies: Cookies, query: string) =>
+      app.inject({
+        method: "GET",
+        url: `/api/auctioneer/lots?${query}`,
+        cookies,
+      })
+
+    // cinco lotes, do mais novo (Lote 5) ao mais antigo (Lote 1)
+    async function fiveLots(auctioneerId: string) {
+      const lots = []
+      for (let n = 1; n <= 5; n++) {
+        lots.push(
+          await createLot(auctioneerId, {
+            title: `Lote ${n}`,
+            ...live(),
+            createdAt: addMs(NOW(), -hours(10 - n)),
+          }),
+        )
+      }
+      return lots
+    }
+    const titles = (body: { lots: { title: string }[] }) =>
+      body.lots.map((l) => l.title)
+
+    it("divide em páginas, do lote mais novo ao mais antigo", async () => {
+      const { id, cookies } = await signUp("auctioneer")
+      await fiveLots(id)
+
+      const first = (await page(cookies, "limit=2&offset=0")).json()
+      const second = (await page(cookies, "limit=2&offset=2")).json()
+      const third = (await page(cookies, "limit=2&offset=4")).json()
+      expect(titles(first)).toEqual(["Lote 5", "Lote 4"])
+      expect(titles(second)).toEqual(["Lote 3", "Lote 2"])
+      expect(titles(third)).toEqual(["Lote 1"])
+      expect(first.total).toBe(5)
+      expect(third.total).toBe(5)
+      expect((await page(cookies, "limit=2&offset=10")).json().lots).toEqual([])
+    })
+
+    it("sem parâmetros devolve a primeira página de 20", async () => {
+      const { id, cookies } = await signUp("auctioneer")
+      for (let n = 0; n < 22; n++) {
+        await createLot(id, { ...live(), createdAt: addMs(NOW(), -n) })
+      }
+      const body = (await listMine(cookies)).json()
+      expect(body.lots).toHaveLength(20)
+      expect(body.total).toBe(22)
+    })
+
+    it("os totais e as contagens valem para todos os lotes, não só para a página", async () => {
+      const { id, cookies } = await signUp("auctioneer")
+      const winner = await createUser({ balanceCents: 100_000 })
+      // o lote vendido é o mais antigo, então fica fora da primeira página
+      const sold = await createLot(id, {
+        title: "Vendido",
+        ...ended(),
+        bidCount: 1,
+        settledAt: NOW(),
+        createdAt: addMs(NOW(), -hours(48)),
+      })
+      await db.insert(receipts).values({
+        lotId: sold.id,
+        winnerId: winner.id,
+        amountCents: 30_000,
+        chainMac: "x",
+      })
+      await createLot(id, { ...live(), createdAt: addMs(NOW(), -hours(2)) })
+      await createLot(id, {
+        ...scheduled(),
+        createdAt: addMs(NOW(), -hours(1)),
+      })
+      await createLot(id, {
+        ...live(),
+        cancelledAt: NOW(),
+        createdAt: addMs(NOW(), -hours(3)),
+      })
+
+      const body = (await page(cookies, "limit=1&offset=0")).json()
+      expect(body.lots).toHaveLength(1)
+      expect(body.total).toBe(4)
+      expect(body.counts).toEqual({ open: 2, sold: 1 })
+      expect(body.totalReceivedCents).toBe(30_000)
+    })
+
+    it("recusa limit e offset fora da faixa", async () => {
+      const { cookies } = await signUp("auctioneer")
+      for (const query of ["limit=0", "limit=101", "offset=-1", "limit=x"]) {
+        expect((await page(cookies, query)).statusCode).toBe(400)
+      }
     })
   })
 })
