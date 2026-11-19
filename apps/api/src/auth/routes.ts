@@ -62,10 +62,11 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
         return reply.code(201).send(user)
       } catch (err) {
         if (isUniqueViolation(err)) {
+          // Não diz que o e-mail já existe. O hash acima roda nos dois casos
           throw new AppError(
-            409,
-            "EMAIL_TAKEN",
-            "Este e-mail já está cadastrado.",
+            400,
+            "REGISTRATION_FAILED",
+            "Não foi possível concluir o cadastro com esses dados.",
           )
         }
         throw err
