@@ -90,6 +90,26 @@ export const lots = pgTable(
     check("lots_schedule_valid", sql`${t.endsAt} > ${t.startsAt}`),
     index("lots_schedule_idx").on(t.startsAt, t.endsAt),
     index("lots_leader_idx").on(t.leaderId),
+    // painel do leiloeiro: lotes dele, do mais novo para o mais antigo.
+    // "desc" puro (nulls first) para casar com o ORDER BY da consulta
+    index("lots_auctioneer_created_idx").on(
+      t.auctioneerId,
+      sql`${t.createdAt} desc`,
+      t.id,
+    ),
+    // vitrine: ordenação sem filtro e por fim (ao vivo e encerrados); nunca lista cancelados
+    index("lots_showcase_created_idx")
+      .on(sql`${t.createdAt} desc`, t.id)
+      .where(sql`${t.cancelledAt} is null`),
+    index("lots_showcase_ends_idx")
+      .on(t.endsAt, t.id)
+      .where(sql`${t.cancelledAt} is null`),
+    // busca da vitrine (ILIKE '%texto%'), com pg_trgm
+    index("lots_title_trgm_idx").using("gin", sql`${t.title} gin_trgm_ops`),
+    index("lots_set_trgm_idx").using(
+      "gin",
+      sql`(${t.attributes}->>'set') gin_trgm_ops`,
+    ),
     index("lots_pending_settlement_idx")
       .on(t.endsAt)
       .where(sql`${t.settledAt} is null and ${t.cancelledAt} is null`),
@@ -113,19 +133,27 @@ export const bids = pgTable(
     endsAtAfter: timestamptz("ends_at_after"),
     mac: text("mac").notNull(),
   },
-  (t) => [unique("bids_lot_seq_unique").on(t.lotId, t.seq)],
+  (t) => [
+    unique("bids_lot_seq_unique").on(t.lotId, t.seq),
+    // "Meus arremates": lotes em que o usuário deu lance
+    index("bids_bidder_lot_idx").on(t.bidderId, t.lotId),
+  ],
 )
 
-export const receipts = pgTable("receipts", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  lotId: uuid("lot_id")
-    .notNull()
-    .unique()
-    .references(() => lots.id),
-  winnerId: uuid("winner_id")
-    .notNull()
-    .references(() => users.id),
-  amountCents: cents("amount_cents").notNull(),
-  chainMac: text("chain_mac").notNull(),
-  issuedAt: timestamptz("issued_at").notNull().defaultNow(),
-})
+export const receipts = pgTable(
+  "receipts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    lotId: uuid("lot_id")
+      .notNull()
+      .unique()
+      .references(() => lots.id),
+    winnerId: uuid("winner_id")
+      .notNull()
+      .references(() => users.id),
+    amountCents: cents("amount_cents").notNull(),
+    chainMac: text("chain_mac").notNull(),
+    issuedAt: timestamptz("issued_at").notNull().defaultNow(),
+  },
+  (t) => [index("receipts_winner_idx").on(t.winnerId)],
+)
