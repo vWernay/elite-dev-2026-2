@@ -5,6 +5,7 @@ import { z } from "zod"
 import { db } from "../db/client.js"
 import { userRole, users } from "../db/schema.js"
 import { AppError } from "../errors.js"
+import { limitBy } from "../rate-limit.js"
 import { authenticate } from "./guards.js"
 import {
   endSessionCookie,
@@ -30,10 +31,34 @@ function isUniqueViolation(err: unknown): boolean {
   return e?.code === "23505" || e?.cause?.code === "23505"
 }
 
+const MINUTE = 60_000
+
 export const authRoutes: FastifyPluginAsyncZod = async (app) => {
+  // Antes de qualquer hash de senha, para o limite também proteger a CPU
+  const registerLimit = limitBy(app, {
+    name: "register-ip",
+    max: 5,
+    windowMs: MINUTE,
+    key: (request) => request.ip,
+  })
+  const loginByIp = limitBy(app, {
+    name: "login-ip",
+    max: 20,
+    windowMs: MINUTE,
+    key: (request) => request.ip,
+  })
+  const loginByIpAndEmail = limitBy(app, {
+    name: "login-ip-email",
+    max: 5,
+    windowMs: MINUTE,
+    key: (request) =>
+      `${request.ip}:${(request.body as { email: string }).email}`,
+  })
+
   app.post(
     "/register",
     {
+      preHandler: registerLimit,
       schema: {
         body: z.object({
           name: z.string().trim().min(1).max(100),
@@ -77,6 +102,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (app) => {
   app.post(
     "/login",
     {
+      preHandler: [loginByIp, loginByIpAndEmail],
       schema: {
         body: z.object({ email, password: z.string().min(1).max(128) }),
         response: { 200: userSchema },

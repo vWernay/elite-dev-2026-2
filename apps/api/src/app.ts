@@ -1,5 +1,6 @@
 import fastifyCookie from "@fastify/cookie"
 import fastifyHelmet from "@fastify/helmet"
+import fastifyRateLimit from "@fastify/rate-limit"
 import fastifyStatic from "@fastify/static"
 import fastifySwagger from "@fastify/swagger"
 import fastifySwaggerUi from "@fastify/swagger-ui"
@@ -22,18 +23,25 @@ import { env } from "./env.js"
 import { AppError } from "./errors.js"
 import { DEFAULT_HEARTBEAT_MS, eventRoutes } from "./events/routes.js"
 import { auctioneerRoutes, lotRoutes } from "./lots/routes.js"
+import { globalLimitError } from "./rate-limit.js"
 import { receiptRoutes } from "./receipts/routes.js"
 import { walletRoutes } from "./wallet/routes.js"
 
-type AppOptions = { sseHeartbeatMs?: number; webDir?: string }
+type AppOptions = {
+  sseHeartbeatMs?: number
+  webDir?: string
+  // Desligado por padrão nos testes, que abrem muitas contas pelo mesmo IP
+  rateLimit?: boolean
+}
 
 export function buildApp(options: AppOptions = {}) {
   const app = Fastify({
     logger: env.NODE_ENV !== "test",
     // sem isto, o desligamento esperaria os streams SSE abertos para sempre
     forceCloseConnections: true,
-    // atrás do roteador do Heroku: protocolo e IP vêm dos cabeçalhos X-Forwarded
-    trustProxy: true,
+    // Atrás do roteador do Heroku (1 salto): o IP é o último do X-Forwarded-For.
+    // Com "true" valeria o primeiro, que o cliente pode forjar para escapar do limite
+    trustProxy: (_address, hop) => hop < 1,
   }).withTypeProvider<ZodTypeProvider>()
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
@@ -60,6 +68,13 @@ export function buildApp(options: AppOptions = {}) {
         ? { maxAge: 15_552_000, includeSubDomains: true }
         : false,
   })
+  if (options.rateLimit ?? env.NODE_ENV !== "test") {
+    app.register(fastifyRateLimit, {
+      max: 300,
+      timeWindow: "1 minute",
+      errorResponseBuilder: globalLimitError,
+    })
+  }
   app.register(fastifyCookie)
   // preenchido pelo authenticate
   app.decorateRequest("user", null as never)
@@ -143,9 +158,12 @@ export function buildApp(options: AppOptions = {}) {
       .send({ error: { code: "NOT_FOUND", message: "Rota não encontrada." } })
   })
 
-  app.get("/api/health", async () => {
-    await db.execute(sql`select 1`)
-    return { status: "ok" }
+  // Dentro de um plugin para o limite global também valer aqui
+  app.register(async (scope) => {
+    scope.get("/api/health", async () => {
+      await db.execute(sql`select 1`)
+      return { status: "ok" }
+    })
   })
 
   app.register(authRoutes, { prefix: "/api/auth" })
