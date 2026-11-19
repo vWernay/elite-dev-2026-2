@@ -582,6 +582,50 @@ export type PostApiWalletDeposits201 = {
   availableCents: number;
 };
 
+export type GetApiWalletEntriesParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
+};
+
+export type GetApiWalletEntries200ItemsItemKind = typeof GetApiWalletEntries200ItemsItemKind[keyof typeof GetApiWalletEntries200ItemsItemKind];
+
+
+export const GetApiWalletEntries200ItemsItemKind = {
+  opening: 'opening',
+  deposit: 'deposit',
+  lot_debit: 'lot_debit',
+  lot_credit: 'lot_credit',
+  adjustment: 'adjustment',
+} as const;
+
+export type GetApiWalletEntries200ItemsItem = {
+  id: number;
+  kind: GetApiWalletEntries200ItemsItemKind;
+  amountCents: number;
+  balanceAfterCents: number;
+  /**
+     * @nullable
+     * @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$
+     */
+  lotId: string | null;
+  /** @nullable */
+  lotTitle: string | null;
+  createdAt: string;
+};
+
+export type GetApiWalletEntries200 = {
+  items: GetApiWalletEntries200ItemsItem[];
+  total: number;
+};
+
 export type GetApiBidderLotsParams = {
 filter?: GetApiBidderLotsFilter;
 /**
@@ -2249,6 +2293,120 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getPostApiWalletDepositsMutationOptions(options), queryClient);
     }
+
+export type getApiWalletEntriesResponse200 = {
+  data: GetApiWalletEntries200
+  status: 200
+}
+
+export type getApiWalletEntriesResponseSuccess = (getApiWalletEntriesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getApiWalletEntriesResponse = (getApiWalletEntriesResponseSuccess)
+
+export const getGetApiWalletEntriesUrl = (params?: GetApiWalletEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/wallet/entries?${stringifiedParams}` : `/api/wallet/entries`
+}
+
+export const getApiWalletEntries = async (params?: GetApiWalletEntriesParams, options?: Parameters<typeof apiFetch>[1]): Promise<getApiWalletEntriesResponse> => {
+
+  return apiFetch<getApiWalletEntriesResponse>(getGetApiWalletEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetApiWalletEntriesQueryKey = (params?: GetApiWalletEntriesParams,) => {
+    return [
+    `/api/wallet/entries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetApiWalletEntriesQueryOptions = <TData = Awaited<ReturnType<typeof getApiWalletEntries>>, TError = unknown>(params?: GetApiWalletEntriesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiWalletEntries>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApiWalletEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiWalletEntries>>> = ({ signal }) => getApiWalletEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApiWalletEntries>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApiWalletEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof getApiWalletEntries>>>
+export type GetApiWalletEntriesQueryError = unknown
+
+
+export function useGetApiWalletEntries<TData = Awaited<ReturnType<typeof getApiWalletEntries>>, TError = unknown>(
+ params: undefined |  GetApiWalletEntriesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiWalletEntries>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiWalletEntries>>,
+          TError,
+          Awaited<ReturnType<typeof getApiWalletEntries>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiWalletEntries<TData = Awaited<ReturnType<typeof getApiWalletEntries>>, TError = unknown>(
+ params?: GetApiWalletEntriesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiWalletEntries>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApiWalletEntries>>,
+          TError,
+          Awaited<ReturnType<typeof getApiWalletEntries>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApiWalletEntries<TData = Awaited<ReturnType<typeof getApiWalletEntries>>, TError = unknown>(
+ params?: GetApiWalletEntriesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiWalletEntries>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetApiWalletEntries<TData = Awaited<ReturnType<typeof getApiWalletEntries>>, TError = unknown>(
+ params?: GetApiWalletEntriesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiWalletEntries>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApiWalletEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export type getApiBidderLotsResponse200 = {
   data: GetApiBidderLots200

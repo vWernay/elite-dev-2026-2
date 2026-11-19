@@ -6,6 +6,7 @@ import { placeBid } from "./bids/service.js"
 import { db, pool } from "./db/client.js"
 import { bids, lots, receipts, users } from "./db/schema.js"
 import { settleLot } from "./settlement/service.js"
+import { recordEntry } from "./wallet/ledger.js"
 
 // Dados de demo
 const PASSWORD = "senha12345"
@@ -192,12 +193,30 @@ async function upsertAccounts() {
       passwordHash,
       balanceCents: account.role === "bidder" ? DEPOSIT_CENTS : 0,
     }
-    const [row] = await db
-      .insert(users)
-      .values(values)
-      .onConflictDoUpdate({ target: users.email, set: values })
-      .returning({ id: users.id })
-    ids[account.email.split("@")[0]] = row.id
+    await db.transaction(async (tx) => {
+      const [before] = await tx
+        .select({ balanceCents: users.balanceCents })
+        .from(users)
+        .where(eq(users.email, account.email))
+        .for("update")
+      const [row] = await tx
+        .insert(users)
+        .values(values)
+        .onConflictDoUpdate({ target: users.email, set: values })
+        .returning({ id: users.id })
+      ids[account.email.split("@")[0]] = row.id
+
+      // O saldo volta ao valor da demonstração; o extrato registra a diferença
+      const delta = values.balanceCents - (before?.balanceCents ?? 0)
+      if (delta !== 0) {
+        await recordEntry(tx, {
+          userId: row.id,
+          kind: before ? "adjustment" : "opening",
+          amountCents: delta,
+          balanceAfterCents: values.balanceCents,
+        })
+      }
+    })
   }
   return ids
 }

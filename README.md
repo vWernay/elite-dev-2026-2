@@ -37,8 +37,8 @@ Para ver o tempo real, abra a sala do mesmo lote em dois navegadores (ou uma jan
 | Vitrine de lotes, separada em ao vivo, agendados e encerrados, com busca por título ou coleção | `/`                    |
 | Sala do lote ao vivo                                                                           | `/lotes/:id`           |
 | Página de auditoria (pública)                                                                  | `/lotes/:id/auditoria` |
-| Painel do leiloeiro                                                                            | `/painel`              |
-| Carteira do licitante                                                                          | `/carteira`            |
+| Painel do leiloeiro, com o extrato das vendas                                                  | `/painel`              |
+| Carteira do licitante, com saldo e extrato                                                     | `/carteira`            |
 | Meus arremates                                                                                 | `/arremates`           |
 | Comprovante de arremate (público)                                                              | `/comprovante/:id`     |
 | Entrar e cadastro                                                                              | `/entrar`, `/cadastro` |
@@ -121,6 +121,7 @@ pnpm lint                       # Biome
 pnpm typecheck                  # tsc na API e no front
 pnpm build                      # build da API e do front
 pnpm --filter api seed          # recria os dados de demonstração
+pnpm --filter api ledger:check  # confere se o saldo de cada usuário bate com a soma do extrato
 pnpm --filter api db:bench      # banco com volume (leilao_bench) e o EXPLAIN das listagens; ver docs/adr/0007
 
 # Depois de mudar uma rota da API, para atualizar o cliente do front:
@@ -178,6 +179,12 @@ Cada recusa tem um código próprio, e o front mostra uma mensagem com o motivo:
 O saldo comprometido não é guardado numa coluna. Ele é a soma dos lances atuais dos lotes que o licitante lidera e que ainda não foram liquidados nem cancelados.
 - Quando alguém supera o lance, o líder do lote muda e o valor volta ao disponível de quem foi superado na mesma transação. Nenhum saldo precisa ser movimentado.
 - O mesmo vale para o cancelamento: cancelar o lote libera o valor reservado na hora. É assim que funciona o estorno automático.
+
+### Extrato da carteira
+
+Cada mudança de saldo (depósito, arremate, venda) grava uma linha em `wallet_entries`, na mesma transação que altera o saldo. A tabela é só de inserção (um trigger recusa `UPDATE` e `DELETE`), e a soma das linhas de um usuário tem que ser igual ao saldo dele. `pnpm --filter api ledger:check` confere isso para todos os usuários.
+- **O que cobre:** o histórico de movimentos e a conferência de que o saldo bate com ele.
+- **O que não cobre:** o banco não impede que alguém mude `users.balance_cents` direto (a conferência só detecta), e as linhas do extrato não são assinadas como a cadeia de lances. Saldos que já existiam antes do extrato aparecem como "Saldo inicial". Detalhes no [ADR 0009](docs/adr/0009-extrato-da-carteira.md).
 
 ### Concorrência
 

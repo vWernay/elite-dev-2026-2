@@ -4,6 +4,7 @@ import { lastMac } from "../audit/last-mac.js"
 import { db } from "../db/client.js"
 import { bids, lots, receipts, users } from "../db/schema.js"
 import { lotEvents } from "../events/bus.js"
+import { recordEntry } from "../wallet/ledger.js"
 
 export type SettleResult =
   | {
@@ -75,14 +76,30 @@ export async function settleLot(
         .where(eq(users.id, userId))
         .for("update")
     }
-    await tx
+    const [winner] = await tx
       .update(users)
       .set({ balanceCents: sql`${users.balanceCents} - ${amountCents}` })
       .where(eq(users.id, winnerId))
-    await tx
+      .returning({ balanceCents: users.balanceCents })
+    await recordEntry(tx, {
+      userId: winnerId,
+      kind: "lot_debit",
+      amountCents: -amountCents,
+      balanceAfterCents: winner.balanceCents,
+      lotId,
+    })
+    const [auctioneer] = await tx
       .update(users)
       .set({ balanceCents: sql`${users.balanceCents} + ${amountCents}` })
       .where(eq(users.id, lot.auctioneerId))
+      .returning({ balanceCents: users.balanceCents })
+    await recordEntry(tx, {
+      userId: lot.auctioneerId,
+      kind: "lot_credit",
+      amountCents,
+      balanceAfterCents: auctioneer.balanceCents,
+      lotId,
+    })
 
     // UNIQUE (lot_id) em receipts impede liquidar o mesmo lote duas vezes
     const headMac = await settledHead()

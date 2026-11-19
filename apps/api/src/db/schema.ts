@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm"
 import {
   bigint,
+  bigserial,
   check,
   index,
   integer,
@@ -14,6 +15,14 @@ import {
 } from "drizzle-orm/pg-core"
 
 export const userRole = pgEnum("user_role", ["auctioneer", "bidder"])
+
+export const walletEntryKind = pgEnum("wallet_entry_kind", [
+  "opening",
+  "deposit",
+  "lot_debit",
+  "lot_credit",
+  "adjustment",
+])
 
 const cents = (name: string) => bigint(name, { mode: "number" })
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true })
@@ -40,6 +49,39 @@ export const users = pgTable(
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (t) => [check("users_balance_non_negative", sql`${t.balanceCents} >= 0`)],
+)
+
+// Extrato: só de inserção (um trigger recusa UPDATE e DELETE).
+// A soma de amount_cents de um usuário tem que ser igual a users.balance_cents.
+export const walletEntries = pgTable(
+  "wallet_entries",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    kind: walletEntryKind("kind").notNull(),
+    // com sinal: entra (+) ou sai (-)
+    amountCents: cents("amount_cents").notNull(),
+    balanceAfterCents: cents("balance_after_cents").notNull(),
+    // sem chave estrangeira: o extrato não pode depender de o lote continuar existindo
+    lotId: uuid("lot_id"),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("wallet_entries_amount_nonzero", sql`${t.amountCents} <> 0`),
+    check(
+      "wallet_entries_balance_non_negative",
+      sql`${t.balanceAfterCents} >= 0`,
+    ),
+    check(
+      "wallet_entries_sign_by_kind",
+      sql`(${t.kind} in ('opening', 'deposit', 'lot_credit') and ${t.amountCents} > 0)
+        or (${t.kind} = 'lot_debit' and ${t.amountCents} < 0)
+        or ${t.kind} = 'adjustment'`,
+    ),
+    index("wallet_entries_user_idx").on(t.userId, sql`${t.id} desc`),
+  ],
 )
 
 export const sessions = pgTable(
