@@ -1,5 +1,6 @@
 import { and, asc, eq, isNull, lte, sql } from "drizzle-orm"
 import { chain } from "../audit/index.js"
+import { lastMac } from "../audit/last-mac.js"
 import { db } from "../db/client.js"
 import { bids, lots, receipts, users } from "../db/schema.js"
 import { lotEvents } from "../events/bus.js"
@@ -38,8 +39,19 @@ export async function settleLot(
       return { outcome: "skipped", lotId }
     }
 
+    // A liquidação entra na cadeia, então o head_mac é recalculado com settled_at
+    const settledHead = async () =>
+      chain.headMac(
+        { ...lot, settledAt: now },
+        lot.bidCount,
+        await lastMac(tx, lot),
+      )
+
     if (lot.bidCount === 0) {
-      await tx.update(lots).set({ settledAt: now }).where(eq(lots.id, lotId))
+      await tx
+        .update(lots)
+        .set({ settledAt: now, headMac: await settledHead() })
+        .where(eq(lots.id, lotId))
       return { outcome: "unsold", lotId }
     }
 
@@ -73,17 +85,21 @@ export async function settleLot(
       .where(eq(users.id, lot.auctioneerId))
 
     // UNIQUE (lot_id) em receipts impede liquidar o mesmo lote duas vezes
+    const headMac = await settledHead()
     const [receipt] = await tx
       .insert(receipts)
       .values({
         lotId,
         winnerId,
         amountCents,
-        chainMac: lot.headMac,
+        chainMac: headMac,
         issuedAt: now,
       })
       .returning({ id: receipts.id })
-    await tx.update(lots).set({ settledAt: now }).where(eq(lots.id, lotId))
+    await tx
+      .update(lots)
+      .set({ settledAt: now, headMac })
+      .where(eq(lots.id, lotId))
 
     return {
       outcome: "sold",

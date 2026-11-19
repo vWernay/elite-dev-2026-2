@@ -1,5 +1,6 @@
 import argon2 from "argon2"
 import { eq, inArray } from "drizzle-orm"
+import { CURRENT_CHAIN_VERSION } from "./audit/chain.js"
 import { chain } from "./audit/index.js"
 import { placeBid } from "./bids/service.js"
 import { db, pool } from "./db/client.js"
@@ -232,11 +233,14 @@ async function createLot(seed: Seed, auctioneerId: string, now: Date) {
     startsAt,
     endsAt,
     originalEndsAt: endsAt,
+    chainVersion: CURRENT_CHAIN_VERSION,
     headMac: chain.initialHeadMac({
       id: seed.id,
       startingBidCents: seed.startingBidCents,
       minIncrementCents: seed.minIncrementCents,
       startsAt,
+      originalEndsAt: endsAt,
+      chainVersion: CURRENT_CHAIN_VERSION,
     }),
   })
 }

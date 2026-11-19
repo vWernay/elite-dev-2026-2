@@ -8,6 +8,15 @@
     "schemas": {}
   },
   "paths": {
+    "/api/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
     "/api/auth/register": {
       "post": {
         "requestBody": {
@@ -1020,9 +1029,19 @@
                         "enum": [
                           "COUNT_MISMATCH",
                           "HEAD_MISMATCH",
-                          "LOT_STATE_MISMATCH"
+                          "LOT_STATE_MISMATCH",
+                          "ENDS_AT_MISMATCH"
                         ]
                       }
+                    },
+                    "chainVersion": {
+                      "type": "number"
+                    },
+                    "originalEndsAt": {
+                      "type": "string"
+                    },
+                    "endsAt": {
+                      "type": "string"
                     },
                     "bids": {
                       "type": "array",
@@ -1043,6 +1062,10 @@
                           },
                           "valid": {
                             "type": "boolean"
+                          },
+                          "extendedEndsAt": {
+                            "nullable": true,
+                            "type": "string"
                           }
                         },
                         "required": [
@@ -1050,7 +1073,8 @@
                           "pseudonym",
                           "amountCents",
                           "createdAt",
-                          "valid"
+                          "valid",
+                          "extendedEndsAt"
                         ],
                         "additionalProperties": false
                       }
@@ -1064,6 +1088,9 @@
                     "firstInvalidSeq",
                     "fingerprint",
                     "issues",
+                    "chainVersion",
+                    "originalEndsAt",
+                    "endsAt",
                     "bids"
                   ],
                   "additionalProperties": false

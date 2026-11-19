@@ -1,5 +1,6 @@
-import { desc, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { chain } from "../audit/index.js"
+import { lastMac } from "../audit/last-mac.js"
 import { db } from "../db/client.js"
 import { bids, lots, users } from "../db/schema.js"
 import { AppError } from "../errors.js"
@@ -51,28 +52,23 @@ export async function placeBid(
       await committedCents(tx, bidderId),
     )
 
-    const [previous] = await tx
-      .select({ mac: bids.mac })
-      .from(bids)
-      .where(eq(bids.lotId, lotId))
-      .orderBy(desc(bids.seq))
-      .limit(1)
-
+    const endsAt = extendedEndsAt(lot.endsAt, now)
     const data = {
       seq: lot.bidCount + 1,
       bidderId,
       amountCents,
       createdAt: now,
+      // na v2 cada lance registra o fim que resultou dele (a prorrogação vira fato assinado)
+      endsAtAfter: lot.chainVersion >= 2 ? endsAt : null,
     }
-    const mac = chain.bidMac(lotId, data, previous?.mac ?? chain.genesis(lot))
+    const mac = chain.bidMac(lot, data, await lastMac(tx, lot))
     await tx.insert(bids).values({ lotId, ...data, mac })
 
-    const endsAt = extendedEndsAt(lot.endsAt, now)
     const updated = {
       currentBidCents: amountCents,
       leaderId: bidderId,
       bidCount: data.seq,
-      headMac: chain.headMac(lotId, data.seq, mac),
+      headMac: chain.headMac({ ...lot, endsAt }, data.seq, mac),
       endsAt,
     }
     await tx.update(lots).set(updated).where(eq(lots.id, lotId))

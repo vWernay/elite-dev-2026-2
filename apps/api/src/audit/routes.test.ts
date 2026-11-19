@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
 import { buildApp } from "../app.js"
 import { placeBid } from "../bids/service.js"
 import { db } from "../db/client.js"
+import { cancelLot } from "../lots/service.js"
 import { settleLot } from "../settlement/service.js"
 import {
   addMs,
@@ -65,6 +66,9 @@ describe("GET /api/lots/:id/audit: lote íntegro", () => {
       firstInvalidSeq: null,
       fingerprint: expect.stringMatching(/^[0-9a-f]{16}$/),
       issues: [],
+      chainVersion: 2,
+      originalEndsAt: addMs(T0, minutes(60)).toISOString(),
+      endsAt: addMs(T0, minutes(60)).toISOString(),
       bids: [
         {
           seq: 1,
@@ -72,6 +76,7 @@ describe("GET /api/lots/:id/audit: lote íntegro", () => {
           amountCents: 10_000,
           createdAt: addMs(T0, minutes(10)).toISOString(),
           valid: true,
+          extendedEndsAt: null,
         },
         {
           seq: 2,
@@ -79,6 +84,7 @@ describe("GET /api/lots/:id/audit: lote íntegro", () => {
           amountCents: 10_500,
           createdAt: addMs(T0, minutes(20)).toISOString(),
           valid: true,
+          extendedEndsAt: null,
         },
         {
           seq: 3,
@@ -86,6 +92,7 @@ describe("GET /api/lots/:id/audit: lote íntegro", () => {
           amountCents: 11_000,
           createdAt: addMs(T0, minutes(30)).toISOString(),
           valid: true,
+          extendedEndsAt: null,
         },
       ],
     })
@@ -128,7 +135,8 @@ describe("GET /api/lots/:id/audit: lote íntegro", () => {
 
   it("lote cancelado também pode ser auditado", async () => {
     const auctioneer = await createUser({ role: "auctioneer" })
-    const lot = await createLot(auctioneer.id, { cancelledAt: T0 })
+    const lot = await createLot(auctioneer.id)
+    await cancelLot(lot.id, auctioneer.id, {}, T0)
     const body = (await audit(lot.id)).json()
     expect(body).toMatchObject({ status: "cancelled", verdict: "intact" })
   })
@@ -309,5 +317,122 @@ describe("GET /api/lots/:id/audit: adulteração direto no banco", () => {
       verdict: "tampered",
       firstInvalidSeq: 3,
     })
+  })
+})
+
+describe("GET /api/lots/:id/audit: fim, cancelamento e liquidação (cadeia v2)", () => {
+  it("alterar ends_at é detectado", async () => {
+    const { lot } = await lotWithBids()
+    await run(
+      `UPDATE lots SET ends_at = ends_at + interval '1 day' WHERE id = '${lot.id}'`,
+    )
+    const body = (await audit(lot.id)).json()
+    expect(body.verdict).toBe("tampered")
+    expect(body.issues).toContain("HEAD_MISMATCH")
+    expect(body.issues).toContain("ENDS_AT_MISMATCH")
+  })
+
+  it("alterar original_ends_at é detectado desde o lance #1", async () => {
+    const { lot } = await lotWithBids()
+    await run(
+      `UPDATE lots SET original_ends_at = original_ends_at + interval '1 day' WHERE id = '${lot.id}'`,
+    )
+    const body = (await audit(lot.id)).json()
+    expect(body.verdict).toBe("tampered")
+    expect(body.firstInvalidSeq).toBe(1)
+  })
+
+  it("apagar cancelled_at de um lote cancelado é detectado", async () => {
+    const { lot, auctioneer } = await lotWithBids()
+    // lote ainda no ar: cancela pelo serviço, como a API faz
+    await cancelLot(lot.id, auctioneer.id, { confirmBids: true }, T0)
+    expect((await audit(lot.id)).json().verdict).toBe("intact")
+
+    await run(`UPDATE lots SET cancelled_at = NULL WHERE id = '${lot.id}'`)
+    const body = (await audit(lot.id)).json()
+    expect(body.verdict).toBe("tampered")
+    expect(body.issues).toEqual(["HEAD_MISMATCH"])
+  })
+
+  it("preencher settled_at sem liquidar é detectado", async () => {
+    const { lot } = await lotWithBids()
+    await run(`UPDATE lots SET settled_at = now() WHERE id = '${lot.id}'`)
+    const body = (await audit(lot.id)).json()
+    expect(body.verdict).toBe("tampered")
+    expect(body.issues).toEqual(["HEAD_MISMATCH"])
+  })
+
+  it("apagar settled_at de um lote liquidado é detectado", async () => {
+    const { lot } = await lotWithBids()
+    await settleLot(lot.id, () => addMs(T0, minutes(61)))
+    expect((await audit(lot.id)).json().verdict).toBe("intact")
+
+    await run(`UPDATE lots SET settled_at = NULL WHERE id = '${lot.id}'`)
+    expect((await audit(lot.id)).json().verdict).toBe("tampered")
+  })
+
+  it("alterar o fim gravado em um lance invalida aquele lance", async () => {
+    const { lot } = await lotWithBids()
+    await run(
+      `UPDATE bids SET ends_at_after = ends_at_after + interval '1 hour' WHERE lot_id = '${lot.id}' AND seq = 2`,
+    )
+    expect((await audit(lot.id)).json().firstInvalidSeq).toBe(2)
+  })
+
+  it("mostra qual lance prorrogou o fim", async () => {
+    const auctioneer = await createUser({ role: "auctioneer" })
+    const ana = await createUser({ balanceCents: 100_000 })
+    const lot = await createLot(auctioneer.id)
+    // 1 minuto antes do fim: o anti-sniping empurra o fim para 2 min depois
+    const at = addMs(T0, minutes(59))
+    await placeBid(
+      { lotId: lot.id, bidderId: ana.id, amountCents: 10_000 },
+      () => at,
+    )
+    const body = (await audit(lot.id)).json()
+    expect(body.verdict).toBe("intact")
+    expect(body.bids[0].extendedEndsAt).toBe(
+      addMs(at, minutes(2)).toISOString(),
+    )
+    expect(body.endsAt).toBe(body.bids[0].extendedEndsAt)
+
+    // desfazer a prorrogação no lote é detectado
+    await run(
+      `UPDATE lots SET ends_at = original_ends_at WHERE id = '${lot.id}'`,
+    )
+    expect((await audit(lot.id)).json().verdict).toBe("tampered")
+  })
+})
+
+describe("GET /api/lots/:id/audit: lotes da cadeia v1", () => {
+  it("lote v1 continua íntegro e o fim dele fica fora da cadeia", async () => {
+    const auctioneer = await createUser({ role: "auctioneer" })
+    const ana = await createUser({ balanceCents: 100_000 })
+    const lot = await createLot(auctioneer.id, { chainVersion: 1 })
+    await placeBid(
+      { lotId: lot.id, bidderId: ana.id, amountCents: 10_000 },
+      () => addMs(T0, minutes(10)),
+    )
+    const body = (await audit(lot.id)).json()
+    expect(body).toMatchObject({ verdict: "intact", chainVersion: 1 })
+    expect(body.bids[0].extendedEndsAt).toBeNull()
+
+    // limite da v1: alterar o fim não é detectado
+    await run(
+      `UPDATE lots SET ends_at = ends_at + interval '1 day' WHERE id = '${lot.id}'`,
+    )
+    expect((await audit(lot.id)).json().verdict).toBe("intact")
+  })
+
+  it("lance e liquidação num lote v1 seguem a fórmula antiga", async () => {
+    const auctioneer = await createUser({ role: "auctioneer" })
+    const ana = await createUser({ balanceCents: 100_000 })
+    const lot = await createLot(auctioneer.id, { chainVersion: 1 })
+    await placeBid(
+      { lotId: lot.id, bidderId: ana.id, amountCents: 10_000 },
+      () => addMs(T0, minutes(10)),
+    )
+    await settleLot(lot.id, () => addMs(T0, minutes(61)))
+    expect((await audit(lot.id)).json().verdict).toBe("intact")
   })
 })

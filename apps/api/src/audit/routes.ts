@@ -16,8 +16,17 @@ const auditSchema = z.object({
   firstInvalidSeq: z.number().nullable(),
   fingerprint: z.string(),
   issues: z.array(
-    z.enum(["COUNT_MISMATCH", "HEAD_MISMATCH", "LOT_STATE_MISMATCH"]),
+    z.enum([
+      "COUNT_MISMATCH",
+      "HEAD_MISMATCH",
+      "LOT_STATE_MISMATCH",
+      "ENDS_AT_MISMATCH",
+    ]),
   ),
+  // 1 = cadeia antiga, que não cobre o fim do lote, o cancelamento nem a liquidação
+  chainVersion: z.number(),
+  originalEndsAt: z.string(),
+  endsAt: z.string(),
   bids: z.array(
     z.object({
       seq: z.number(),
@@ -25,6 +34,8 @@ const auditSchema = z.object({
       amountCents: z.number(),
       createdAt: z.string(),
       valid: z.boolean(),
+      // novo fim do lote, quando este lance prorrogou (só na v2)
+      extendedEndsAt: z.string().nullable(),
     }),
   ),
 })
@@ -54,6 +65,16 @@ export const auditRoutes: FastifyPluginAsyncZod = async (app) => {
       const audit = chain.verify(lot, rows)
       const validBySeq = new Map(audit.bids.map((b) => [b.seq, b.valid]))
 
+      // Cada lance guarda o fim resultante, então dá para ver qual prorrogou
+      let previousEnd = lot.originalEndsAt
+      const extensions = new Map<number, string>()
+      for (const bid of rows) {
+        if (bid.endsAtAfter && bid.endsAtAfter > previousEnd) {
+          extensions.set(bid.seq, bid.endsAtAfter.toISOString())
+        }
+        previousEnd = bid.endsAtAfter ?? previousEnd
+      }
+
       return {
         lotId: lot.id,
         title: lot.title,
@@ -62,12 +83,16 @@ export const auditRoutes: FastifyPluginAsyncZod = async (app) => {
         firstInvalidSeq: audit.firstInvalidSeq,
         fingerprint: chain.fingerprint(lot.headMac),
         issues: audit.issues,
+        chainVersion: lot.chainVersion,
+        originalEndsAt: lot.originalEndsAt.toISOString(),
+        endsAt: lot.endsAt.toISOString(),
         bids: rows.map((bid) => ({
           seq: bid.seq,
           pseudonym: chain.pseudonym(lot.id, bid.bidderId),
           amountCents: bid.amountCents,
           createdAt: bid.createdAt.toISOString(),
           valid: validBySeq.get(bid.seq) ?? false,
+          extendedEndsAt: extensions.get(bid.seq) ?? null,
         })),
       }
     },
