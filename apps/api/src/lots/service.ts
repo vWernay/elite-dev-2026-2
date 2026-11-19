@@ -273,6 +273,7 @@ export async function cancelLot(
 
 export async function listAuctioneerLots(
   auctioneerId: string,
+  { limit, offset }: { limit: number; offset: number },
   now = new Date(),
 ) {
   const rows = await db
@@ -281,11 +282,19 @@ export async function listAuctioneerLots(
     .leftJoin(receipts, eq(receipts.lotId, lots.id))
     .where(eq(lots.auctioneerId, auctioneerId))
     .orderBy(desc(lots.createdAt), asc(lots.id))
+    .limit(limit)
+    .offset(offset)
 
-  const [{ total }] = await db
-    .select({ total: sql<string>`coalesce(sum(${receipts.amountCents}), 0)` })
-    .from(receipts)
-    .innerJoin(lots, eq(lots.id, receipts.lotId))
+  // Os totais valem para todos os lotes do leiloeiro, não só para a página
+  const [totals] = await db
+    .select({
+      total: sql<string>`count(*)`,
+      open: sql<string>`count(*) filter (where ${lots.cancelledAt} is null and ${lots.endsAt} > ${now})`,
+      sold: sql<string>`count(${receipts.id})`,
+      received: sql<string>`coalesce(sum(${receipts.amountCents}), 0)`,
+    })
+    .from(lots)
+    .leftJoin(receipts, eq(receipts.lotId, lots.id))
     .where(eq(lots.auctioneerId, auctioneerId))
 
   return {
@@ -308,6 +317,8 @@ export async function listAuctioneerLots(
         } as const,
       }
     }),
-    totalReceivedCents: Number(total),
+    total: Number(totals.total),
+    counts: { open: Number(totals.open), sold: Number(totals.sold) },
+    totalReceivedCents: Number(totals.received),
   }
 }

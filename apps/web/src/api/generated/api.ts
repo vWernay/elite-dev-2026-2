@@ -437,6 +437,19 @@ export type GetApiLotsIdAudit200 = {
   bids: GetApiLotsIdAudit200BidsItem[];
 };
 
+export type GetApiAuctioneerLotsParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
+};
+
 export type GetApiAuctioneerLots200LotsItemAttributes = {
   set?: string;
   rarity?: string;
@@ -502,8 +515,15 @@ export type GetApiAuctioneerLots200LotsItem = {
   result: GetApiAuctioneerLots200LotsItemResult;
 };
 
+export type GetApiAuctioneerLots200Counts = {
+  open: number;
+  sold: number;
+};
+
 export type GetApiAuctioneerLots200 = {
   lots: GetApiAuctioneerLots200LotsItem[];
+  total: number;
+  counts: GetApiAuctioneerLots200Counts;
   totalReceivedCents: number;
 };
 
@@ -561,6 +581,30 @@ export type PostApiWalletDeposits201 = {
   committedCents: number;
   availableCents: number;
 };
+
+export type GetApiBidderLotsParams = {
+filter?: GetApiBidderLotsFilter;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ * @maximum 9007199254740991
+ */
+offset?: number;
+};
+
+export type GetApiBidderLotsFilter = typeof GetApiBidderLotsFilter[keyof typeof GetApiBidderLotsFilter];
+
+
+export const GetApiBidderLotsFilter = {
+  all: 'all',
+  ongoing: 'ongoing',
+  won: 'won',
+  lost: 'lost',
+} as const;
 
 export type GetApiBidderLots200LotsItemAttributes = {
   set?: string;
@@ -620,8 +664,17 @@ export type GetApiBidderLots200LotsItem = {
   receiptId: string | null;
 };
 
+export type GetApiBidderLots200Counts = {
+  all: number;
+  ongoing: number;
+  won: number;
+  lost: number;
+};
+
 export type GetApiBidderLots200 = {
   lots: GetApiBidderLots200LotsItem[];
+  total: number;
+  counts: GetApiBidderLots200Counts;
 };
 
 export type GetApiReceiptsId200LotAttributes = {
@@ -1780,17 +1833,24 @@ export type getApiAuctioneerLotsResponseSuccess = (getApiAuctioneerLotsResponse2
 
 export type getApiAuctioneerLotsResponse = (getApiAuctioneerLotsResponseSuccess)
 
-export const getGetApiAuctioneerLotsUrl = () => {
+export const getGetApiAuctioneerLotsUrl = (params?: GetApiAuctioneerLotsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/auctioneer/lots`
+  return stringifiedParams.length > 0 ? `/api/auctioneer/lots?${stringifiedParams}` : `/api/auctioneer/lots`
 }
 
-export const getApiAuctioneerLots = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getApiAuctioneerLotsResponse> => {
+export const getApiAuctioneerLots = async (params?: GetApiAuctioneerLotsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getApiAuctioneerLotsResponse> => {
 
-  return apiFetch<getApiAuctioneerLotsResponse>(getGetApiAuctioneerLotsUrl(),
+  return apiFetch<getApiAuctioneerLotsResponse>(getGetApiAuctioneerLotsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1803,23 +1863,23 @@ export const getApiAuctioneerLots = async ( options?: Parameters<typeof apiFetch
 
 
 
-export const getGetApiAuctioneerLotsQueryKey = () => {
+export const getGetApiAuctioneerLotsQueryKey = (params?: GetApiAuctioneerLotsParams,) => {
     return [
-    `/api/auctioneer/lots`
+    `/api/auctioneer/lots`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetApiAuctioneerLotsQueryOptions = <TData = Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+export const getGetApiAuctioneerLotsQueryOptions = <TData = Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError = unknown>(params?: GetApiAuctioneerLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetApiAuctioneerLotsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetApiAuctioneerLotsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiAuctioneerLots>>> = ({ signal }) => getApiAuctioneerLots({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiAuctioneerLots>>> = ({ signal }) => getApiAuctioneerLots(params, { signal, ...requestOptions });
 
 
 
@@ -1833,7 +1893,7 @@ export type GetApiAuctioneerLotsQueryError = unknown
 
 
 export function useGetApiAuctioneerLots<TData = Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>> & Pick<
+ params: undefined |  GetApiAuctioneerLotsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiAuctioneerLots>>,
           TError,
@@ -1843,7 +1903,7 @@ export function useGetApiAuctioneerLots<TData = Awaited<ReturnType<typeof getApi
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetApiAuctioneerLots<TData = Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>> & Pick<
+ params?: GetApiAuctioneerLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiAuctioneerLots>>,
           TError,
@@ -1853,16 +1913,16 @@ export function useGetApiAuctioneerLots<TData = Awaited<ReturnType<typeof getApi
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetApiAuctioneerLots<TData = Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ params?: GetApiAuctioneerLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiAuctioneerLots<TData = Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ params?: GetApiAuctioneerLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiAuctioneerLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetApiAuctioneerLotsQueryOptions(options)
+  const queryOptions = getGetApiAuctioneerLotsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -2202,17 +2262,24 @@ export type getApiBidderLotsResponseSuccess = (getApiBidderLotsResponse200) & {
 
 export type getApiBidderLotsResponse = (getApiBidderLotsResponseSuccess)
 
-export const getGetApiBidderLotsUrl = () => {
+export const getGetApiBidderLotsUrl = (params?: GetApiBidderLotsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/bidder/lots`
+  return stringifiedParams.length > 0 ? `/api/bidder/lots?${stringifiedParams}` : `/api/bidder/lots`
 }
 
-export const getApiBidderLots = async ( options?: Parameters<typeof apiFetch>[1]): Promise<getApiBidderLotsResponse> => {
+export const getApiBidderLots = async (params?: GetApiBidderLotsParams, options?: Parameters<typeof apiFetch>[1]): Promise<getApiBidderLotsResponse> => {
 
-  return apiFetch<getApiBidderLotsResponse>(getGetApiBidderLotsUrl(),
+  return apiFetch<getApiBidderLotsResponse>(getGetApiBidderLotsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2225,23 +2292,23 @@ export const getApiBidderLots = async ( options?: Parameters<typeof apiFetch>[1]
 
 
 
-export const getGetApiBidderLotsQueryKey = () => {
+export const getGetApiBidderLotsQueryKey = (params?: GetApiBidderLotsParams,) => {
     return [
-    `/api/bidder/lots`
+    `/api/bidder/lots`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetApiBidderLotsQueryOptions = <TData = Awaited<ReturnType<typeof getApiBidderLots>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+export const getGetApiBidderLotsQueryOptions = <TData = Awaited<ReturnType<typeof getApiBidderLots>>, TError = unknown>(params?: GetApiBidderLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetApiBidderLotsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetApiBidderLotsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiBidderLots>>> = ({ signal }) => getApiBidderLots({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApiBidderLots>>> = ({ signal }) => getApiBidderLots(params, { signal, ...requestOptions });
 
 
 
@@ -2255,7 +2322,7 @@ export type GetApiBidderLotsQueryError = unknown
 
 
 export function useGetApiBidderLots<TData = Awaited<ReturnType<typeof getApiBidderLots>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>> & Pick<
+ params: undefined |  GetApiBidderLotsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiBidderLots>>,
           TError,
@@ -2265,7 +2332,7 @@ export function useGetApiBidderLots<TData = Awaited<ReturnType<typeof getApiBidd
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetApiBidderLots<TData = Awaited<ReturnType<typeof getApiBidderLots>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>> & Pick<
+ params?: GetApiBidderLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getApiBidderLots>>,
           TError,
@@ -2275,16 +2342,16 @@ export function useGetApiBidderLots<TData = Awaited<ReturnType<typeof getApiBidd
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetApiBidderLots<TData = Awaited<ReturnType<typeof getApiBidderLots>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ params?: GetApiBidderLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetApiBidderLots<TData = Awaited<ReturnType<typeof getApiBidderLots>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
+ params?: GetApiBidderLotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApiBidderLots>>, TError, TData>>, request?: SecondParameter<typeof apiFetch>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetApiBidderLotsQueryOptions(options)
+  const queryOptions = getGetApiBidderLotsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

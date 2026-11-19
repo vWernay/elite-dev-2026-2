@@ -4,6 +4,7 @@ import {
   Group,
   Image,
   Modal,
+  Pagination,
   Paper,
   Skeleton,
   Stack,
@@ -12,7 +13,7 @@ import {
 } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
 import { IconAlertTriangle, IconGavel } from "@tabler/icons-react"
-import { useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { ApiError } from "../../api/fetcher"
 import {
@@ -30,6 +31,8 @@ import { RouterButton } from "../RouterButton"
 import { StatusBadge } from "../StatusBadge"
 
 type Lot = GetApiAuctioneerLots200LotsItem
+
+const PAGE_SIZE = 10
 
 function Result({ lot }: { lot: Lot }) {
   const { outcome, finalAmountCents } = lot.result
@@ -69,16 +72,14 @@ const canCancel = (lot: Lot) =>
   lot.status === "live" || lot.status === "scheduled"
 
 export function Stats({
-  lots,
+  open,
+  sold,
   totalReceivedCents,
 }: {
-  lots: Lot[]
+  open: number
+  sold: number
   totalReceivedCents: number
 }) {
-  const open = lots.filter(
-    (l) => l.status === "live" || l.status === "scheduled",
-  ).length
-  const sold = lots.filter((l) => l.result.outcome === "sold").length
   const items = [
     {
       label: "Total recebido",
@@ -117,7 +118,12 @@ export function Stats({
 
 export function MyLots() {
   const queryClient = useQueryClient()
-  const lots = useGetApiAuctioneerLots({ query: { refetchInterval: 15_000 } })
+  const [page, setPage] = useState(1)
+  const lots = useGetApiAuctioneerLots(
+    { limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+    // Mantém a página anterior na tela enquanto a próxima carrega
+    { query: { refetchInterval: 15_000, placeholderData: keepPreviousData } },
+  )
   const cancel = usePostApiLotsIdCancel()
   const [toCancel, setToCancel] = useState<Lot | null>(null)
 
@@ -156,11 +162,16 @@ export function MyLots() {
   if (lots.isError)
     return <ErrorState error={lots.error} onRetry={() => lots.refetch()} />
 
-  const { lots: items, totalReceivedCents } = lots.data.data
+  const { lots: items, total, counts, totalReceivedCents } = lots.data.data
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <Stack gap="md">
-      <Stats lots={items} totalReceivedCents={totalReceivedCents} />
+      <Stats
+        open={counts.open}
+        sold={counts.sold}
+        totalReceivedCents={totalReceivedCents}
+      />
 
       {items.length === 0 ? (
         <Paper>
@@ -248,6 +259,12 @@ export function MyLots() {
             </Table>
           </Table.ScrollContainer>
         </Paper>
+      )}
+
+      {pages > 1 && (
+        <Group justify="center">
+          <Pagination total={pages} value={page} onChange={setPage} />
+        </Group>
       )}
 
       <Modal

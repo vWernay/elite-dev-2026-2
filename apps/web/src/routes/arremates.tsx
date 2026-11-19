@@ -2,6 +2,7 @@ import {
   Badge,
   Group,
   Image,
+  Pagination,
   Paper,
   SegmentedControl,
   Skeleton,
@@ -10,12 +11,10 @@ import {
   Text,
 } from "@mantine/core"
 import { IconGavel } from "@tabler/icons-react"
+import { keepPreviousData } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
-import {
-  type GetApiBidderLots200LotsItem,
-  useGetApiBidderLots,
-} from "../api/generated/api"
+import { useGetApiBidderLots } from "../api/generated/api"
 import { requireRole } from "../auth/session"
 import { EmptyState } from "../components/EmptyState"
 import { ErrorState } from "../components/ErrorState"
@@ -29,8 +28,6 @@ export const Route = createFileRoute("/arremates")({
   beforeLoad: requireRole("bidder"),
   component: MyBidsPage,
 })
-
-type Lot = GetApiBidderLots200LotsItem
 
 const stateLabel = {
   leading: "Liderando",
@@ -49,20 +46,20 @@ const filters = {
 
 type Filter = keyof typeof filters
 
-const matches = (lot: Lot, filter: Filter) =>
-  filter === "all" ||
-  (filter === "ongoing" &&
-    (lot.state === "leading" || lot.state === "outbid")) ||
-  (filter === "won" && lot.state === "won") ||
-  (filter === "lost" && lot.state === "lost")
+const PAGE_SIZE = 10
 
 function MyBidsPage() {
-  const bids = useGetApiBidderLots({ query: { refetchInterval: 15_000 } })
   const [filter, setFilter] = useState<Filter>("all")
-
-  const lots = (bids.data?.data.lots ?? []).filter((lot) =>
-    matches(lot, filter),
+  const [page, setPage] = useState(1)
+  // O filtro e a página são do servidor; as contagens valem para todos os lotes
+  const bids = useGetApiBidderLots(
+    { filter, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE },
+    { query: { refetchInterval: 15_000, placeholderData: keepPreviousData } },
   )
+
+  const lots = bids.data?.data.lots ?? []
+  const counts = bids.data?.data.counts
+  const pages = Math.max(1, Math.ceil((bids.data?.data.total ?? 0) / PAGE_SIZE))
 
   return (
     <Stack gap="lg">
@@ -73,10 +70,13 @@ function MyBidsPage() {
 
       <SegmentedControl
         value={filter}
-        onChange={(value) => setFilter(value as Filter)}
+        onChange={(value) => {
+          setFilter(value as Filter)
+          setPage(1)
+        }}
         data={Object.entries(filters).map(([value, label]) => ({
           value,
-          label,
+          label: counts ? `${label} (${counts[value as Filter]})` : label,
         }))}
         w="fit-content"
         maw="100%"
@@ -180,6 +180,12 @@ function MyBidsPage() {
             </Table>
           </Table.ScrollContainer>
         </Paper>
+      )}
+
+      {pages > 1 && (
+        <Group justify="center">
+          <Pagination total={pages} value={page} onChange={setPage} />
+        </Group>
       )}
     </Stack>
   )
