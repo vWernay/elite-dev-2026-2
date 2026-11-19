@@ -23,6 +23,7 @@ import { env } from "./env.js"
 import { AppError } from "./errors.js"
 import { DEFAULT_HEARTBEAT_MS, eventRoutes } from "./events/routes.js"
 import { auctioneerRoutes, lotRoutes } from "./lots/routes.js"
+import { checkOrigin } from "./origin-check.js"
 import { globalLimitError } from "./rate-limit.js"
 import { receiptRoutes } from "./receipts/routes.js"
 import { walletRoutes } from "./wallet/routes.js"
@@ -75,6 +76,7 @@ export function buildApp(options: AppOptions = {}) {
       errorResponseBuilder: globalLimitError,
     })
   }
+  app.addHook("onRequest", checkOrigin)
   app.register(fastifyCookie)
   // preenchido pelo authenticate
   app.decorateRequest("user", null as never)
